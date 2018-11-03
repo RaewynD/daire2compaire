@@ -61,9 +61,12 @@ if graph == 1
     xlabel('x^I, z^I')
     ylabel('x^Q, z^Q')
 
-    title('Constellation Plot')
+    title('Scatter plot')
+    pause;
+
+    title(['Constellation Plot')
     plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
-    for ii=1:L
+    for (ii=1:L)
         plot(x_received(ii),'bx')
         plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
         if (rem(ii,100)==0)

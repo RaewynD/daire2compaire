@@ -7,34 +7,45 @@ rng('default'); % Set seed for random number generator (for repeatability of sim
 
 %user defined values
 picture = 0;
+
 d = 1;
+T = 1; % Symbol period in microsec
+N = 21; % length of filter in symbol periods
+alpha = 0.2; % alpha of sqrt raised cosine filter
+fc = 5; % Carrier Frequency in MHz
+fs = 100; % Sampling frequency in MHz
+Ns = N*T*fs; % Number of filter samples
+p = firrcos(Ns,1/2/T,alpha,fs,'rolloff','sqrt');
+p = p/norm(p)/sqrt(1/fs); % '1/fs' simply serves as 'delta' to approximate integral as sum
+
 
 % Define binary transmission
 x1 = get_bits(picture);
 x_size = size(x1);
 x_size = x_size(2);
-x_range = 1:ceil(x_size/2);
 
-x2 = x1;
-x_transmitted = [];
-for x = 1:x_size
-    if (x2(x) == 0)
-        x2(x) = -1;
-    end
+if mod(x_size,2) ~= 0
+    x1 = [x1,0];
 end
 
-% translate 2 point pair to 4 qam
-for x = x_range
-    if (x*2 > x_size)
-        x2 = [x2,0];
-    end
-    x_transmitted = [x_transmitted, x2(x*2 - 1) + (j * x2(x*2))];
-end
+x2 = 2*x1-1;
+x2 = x2';
 
-% give 4 qam proper energy
-x_transmitted = 0.5 * d * x_transmitted;
+xI_base = x2(1:2:end)
+xQ_base = x2(2:2:end)
 
-transmitsignal = x_transmitted;
+xI_up = upsample(xI_base, fs);
+xQ_up = upsample(xQ_base, fs);
+xI = conv(xI_up, p);
+xQ = conv(xQ_up, p);
+
+len = length(xI);
+
+xI_trans = sqrt(2)*xI.*cos(2*pi*fc*[0:len-1]'/fs);
+xQ_trans = sqrt(2)*xQ.*sin(2*pi*fc*[0:len-1]'/fs);
+
+
+transmitsignal = xI_trans + xQ_trans;
 
 save('transmitsignal.mat','transmitsignal')
 

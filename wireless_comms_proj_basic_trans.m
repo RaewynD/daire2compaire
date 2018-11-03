@@ -23,16 +23,27 @@ x_size = x_size(2);
 x_range = 1:ceil(x_size/2);
 x_transmitted = [];
 
+x2 = x1;
+x_transmitted_tic = [];
+for x = 1:x_size
+    if (x2(x) == 0)
+        x2(x) = -1;
+    end
+end
+
 for x = x_range
     if (x*2 > x_size)
         x_tic = [x1(x*2 - 1),0];
+        x2 = [x2,0];
     else
         x_tic = [x1(x*2 - 1),x1(x*2)];
     end
     x_transmitted = [x_transmitted, pnt_to_const(x_tic, d)];
+    x_transmitted_tic = [x_transmitted_tic, x2(x*2 - 1) + (j * x2(x*2))]
 end
 
 x_transmitted
+x_transmitted_tic = 0.5 * d * x_transmitted_tic
 
 transmitsignal = x_transmitted;
 

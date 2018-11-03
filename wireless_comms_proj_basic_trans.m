@@ -1,4 +1,8 @@
 %% --Main Transmit Code-- %%
+
+clear
+close all
+clc
 rng('default'); % Set seed for random number generator (for repeatability of simulation)
 
 %user defined values

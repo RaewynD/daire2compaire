@@ -1,5 +1,3 @@
-
-
 clear
 close all
 clc

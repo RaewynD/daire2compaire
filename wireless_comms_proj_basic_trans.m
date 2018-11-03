@@ -16,14 +16,43 @@ for xi = qam_range
     end
 end
 
-%Part B - define L random points
-x1 = rand(L,1);
-x_transmitted = ceil(x1 * qam);
+%Part B - define points
+x1 = [1,1,0,1,0,0,0,1,0,1];
+x_size = size(x1);
+x_size = x_size(2);
+x_range = 1:ceil(x_size/2);
+x_transmitted = [];
 
-for x = 1:L
-    x_transmitted(x) = constellation(x_transmitted(x));
+for x = x_range
+    if (x*2 > x_size)
+        x_tic = [x1(x*2 - 1),0];
+    else
+        x_tic = [x1(x*2 - 1),x1(x*2)];
+    end
+    x_transmitted = [x_transmitted, pnt_to_const(x_tic, d)];
 end
+
+x_transmitted
 
 transmitsignal = x_transmitted;
 
 save('transmitsignal.mat','transmitsignal')
+
+
+%% ---Helper Functions--- %%
+% translate bits to 4qam
+function x_const = pnt_to_const(x_tic, d_tic)
+    if x_tic(1) == 1
+        if x_tic(2) == 1
+            x_const = 0.5 * d_tic * (1 + 1*j);
+        else
+            x_const = 0.5 * d_tic * (1 - 1*j);
+        end
+    else
+        if x_tic(2) == 1
+            x_const = 0.5 * d_tic * (-1 + 1*j);
+        else
+            x_const = 0.5 * d_tic * (-1 - 1*j);
+        end
+    end
+end

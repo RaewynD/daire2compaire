@@ -1,3 +1,9 @@
+
+
+clear
+close all
+clc
+
 load receivedsignal.mat
 load transmitsignal.mat
 
@@ -7,7 +13,9 @@ x_transmitted = transmitsignal;
 %user defined values
 qam = 4;
 d = 1;
-L = 200;
+L = 5;
+graph = 1;
+D = 1;
 
 %Part A - define constellation
 qam_range = 1:sqrt(qam);
@@ -48,7 +56,7 @@ if graph == 1
     set(gca,'DataAspectRatio',[1 1 1])
     grid on
     hold on
-    D = max(sqrt(Ex)*1.5, sigma_n*1.5);
+    %D = max(sqrt(Ex)*1.5, sigma_n*1.5);
     axis([-D D -D D])
     plot([-D:D/100:D],zeros(size([-D:D/100:D])),'k','LineWidth',2)
     plot(zeros(size([-D:D/100:D])),[-D:D/100:D],'k','LineWidth',2)
@@ -56,9 +64,9 @@ if graph == 1
     ylabel('x^Q, z^Q')
 
     title('Scatter plot')
-    pause
+    pause;
 
-    title(['Constellation Plot ',num2str(SNR_mfb_dB)])
+    title(['Constellation Plot')
     plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
     for (ii=1:L)
         plot(x_received(ii),'bx')

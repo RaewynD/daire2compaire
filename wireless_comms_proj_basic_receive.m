@@ -12,7 +12,7 @@ else
     load transmitsignal_RECT.mat
 end
 
-x_received = 10*receivedsignal;
+x_received = receivedsignal;
 x_transmitted = transmitsignal;
 
 %% Grab and separate into REAL and IMAGINARY
@@ -132,6 +132,7 @@ if graph == 1
     axis([-D D -D D])
     plot([-D:D/100:D],zeros(size([-D:D/100:D])),'k','LineWidth',2)
     plot(zeros(size([-D:D/100:D])),[-D:D/100:D],'k','LineWidth',2)
+    set(gca,'fontsize', 15)
     xlabel('x^I, z^I')
     ylabel('x^Q, z^Q')
 
@@ -153,6 +154,7 @@ if graph == 1
     plot(real(transmitsignal),'b')
     hold on
     plot(imag(transmitsignal),'r')
+    set(gca,'fontsize', 15)
     legend('real','imag')
     ylabel('xI(t)  and  xQ(t)')
     xlabel('Time in samples')
@@ -160,6 +162,7 @@ if graph == 1
     plot(zI,'b')
     hold on
     plot(zQ,'r')
+    set(gca,'fontsize', 15)
     zoom xon
     legend('real','imag')
     ylabel('yI(t)  and  yQ(t)')
@@ -169,10 +172,12 @@ if graph == 1
     clf
     subplot(2,1,1)
     plot([0:length(transmitsignal)-1]/length(transmitsignal)-0.5, abs(fftshift(fft(transmitsignal))))
+    set(gca,'fontsize', 15)
     ylabel('abs(X(f))')
     xlabel('Frequency in 1/samples')
     subplot(2,1,2)
     plot([0:length(receivedsignal)-1]/length(receivedsignal)-0.5, abs(fftshift(fft(receivedsignal))))
+    set(gca,'fontsize', 15)
     ylabel('abs(Y(f))')
     xlabel('Frequency in 1/samples')
 

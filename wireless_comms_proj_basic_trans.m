@@ -12,8 +12,8 @@ d = 1;
 T = 1; % Symbol period in microsec
 N = 21; % length of filter in symbol periods
 alpha = 0.2; % alpha of sqrt raised cosine filter
-fc = 5; % Carrier Frequency in MHz
-fs = 100; % Sampling frequency in MHz
+fc = 12.5; % Carrier Frequency in MHz
+fs = 200; % Sampling frequency in MHz
 Ns = N*T*fs; % Number of filter samples
 p = firrcos(Ns,1/2/T,alpha,fs,'rolloff','sqrt');
 p = p/norm(p)/sqrt(1/fs); % '1/fs' simply serves as 'delta' to approximate integral as sum
@@ -41,8 +41,8 @@ xQ = conv(xQ_up, p);
 
 len = length(xI);
 
-xI_trans = sqrt(2)*xI.*cos(2*pi*fc*[0:len-1]'/fs);
-xQ_trans = sqrt(2)*xQ.*sin(2*pi*fc*[0:len-1]'/fs);
+xI_trans = sqrt(2)*xI.*cos(2*pi*fc*[0:len-1]/fs);
+xQ_trans = sqrt(2)*xQ.*sin(2*pi*fc*[0:len-1]/fs);
 
 
 transmitsignal = xI_trans + xQ_trans;

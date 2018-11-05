@@ -31,8 +31,8 @@ end
 x2 = 2*x1-1;
 x2 = x2';
 
-xI_base = x2(1:2:end);
-xQ_base = x2(2:2:end);
+xI_base = x2(1:2:end)*(0.5*d);
+xQ_base = x2(2:2:end)*(0.5*d);
 
 xI_up = upsample(xI_base, fs);
 xQ_up = upsample(xQ_base, fs);

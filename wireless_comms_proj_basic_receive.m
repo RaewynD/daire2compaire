@@ -8,15 +8,31 @@ load transmitsignal.mat
 x_received = 10*receivedsignal;
 x_transmitted = transmitsignal;
 
+%% Grab and separate into two files
+
 yI = real(x_transmitted);
 yQ = imag(x_transmitted);
 
-%user defined values
+%% Define User Values
 qam = 4;
-d = 1;
 L = 5;
 graph = 1;
 D = 1;
+LL = 200; % Total number of bits
+T = 1; % Symbol period in microsec
+N = 21; % length of filter in symbol periods
+alpha = 0.2; % alpha of sqrt raised cosine filter
+fc = 5; % Carrier Frequency in MHz
+fs = 200; % Sampling frequency in MHz
+
+%% Define Pulse
+
+p = firrcos(Ns,1/2/T,alpha,fs,'rolloff','sqrt'); 
+p = p/norm(p)/sqrt(1/fs); % '1/fs' simply serves as 'delta' to approximate integral as sum
+
+%% Define Matched Filter
+
+
 
 %Part A - define constellation
 qam_range = 1:sqrt(qam);

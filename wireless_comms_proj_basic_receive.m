@@ -66,41 +66,35 @@ zQ = conv(w,yQ)*(1/fs); % '1/fs' simply serves as 'delta' to approximate integra
 
 
 %% Sample filtered signal
-% TODO: offset by timing that we observed
 zIk = zI(Ns+(2*whalflen)+1:fs*T:end); 
-zIk_all = [];
-len = length(zI)
-for tic = 1:len
-    if(mod(length(zI),length(zIk)) == 0)
-        zIk_all = [zIk_all, zIk(length(zI) / length(zIk))];
-    else
-        zIk_all = [zIk_all, 0];
-    end
-end
-zIk = zIk(1:L/2);
 zQk = zQ(Ns+(2*whalflen)+1:fs*T:end); 
-zQk_all = [];
-len = length(zQ)
-for tic = 1:len
-    if(mod(length(zQ),length(zQk)) == 0)
-        zQk_all = [zQk_all, zQk(length(zQ) / length(zQk))];
-    else
-        zQk_all = [zQk_all, 0];
-    end
-end
-zQk = zQk(1:L/2);
 
-%% Detect bits - One Tap Channel
+%% Frame Recovery
 
-known_bits = [1,1,0,1,0,0,0,1,0,1];
+known_bits = [1 1 0 1 0 0 0 1 0 1];
 
 xIk = known_bits(1:2:end);
 xQk = known_bits(2:2:end);
-hoI_hat = (xIk * zIk) / (norm(xIk)^2);
-hoQ_hat = (xQk * zQk) / (norm(xQk)^2);
+len = min([length(xIk) length(xQk)]);
 
-vIk = zIk / hoI_hat;
-vQk = zQk / hoQ_hat;
+zIbits = sign(zIk); 
+zQbits = sign(zQk);
+zIbits = (zIbits>0);
+zQbits = (zQbits>0);
+
+k = strfind(zIbits', xIk);
+l = strfind(zQbits', xQk);
+
+zIk_frame = zIk(k:k+len-1);
+zQk_frame = zQk(l:l+len-1);
+
+hoI_hat = (xIk * zIk_frame) / (norm(xIk)^2);
+hoQ_hat = (xQk * zQk_frame) / (norm(xQk)^2);
+
+%% Detect bits - One Tap Channel
+
+vIk = zIk_frame / hoI_hat;
+vQk = zQk_frame / hoQ_hat;
 
 vk = vIk + j*vQk;
 
@@ -181,10 +175,8 @@ if graph == 1
     xlabel('Time in samples')
     subplot(2,1,2)
     plot(zI,'b')
-    plot(zIk_all,'c')
     hold on
     plot(zQ,'r')
-    plot(zQk_all,'m')
     set(gca,'fontsize', 15)
     zoom xon
     legend('real','imag')

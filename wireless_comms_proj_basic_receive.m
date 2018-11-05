@@ -8,6 +8,9 @@ load transmitsignal.mat
 x_received = 10*receivedsignal;
 x_transmitted = transmitsignal;
 
+yI = real(x_transmitted);
+yQ = imag(x_transmitted);
+
 %user defined values
 qam = 4;
 d = 1;

@@ -45,7 +45,7 @@ xI_trans = sqrt(2)*xI.*cos(2*pi*fc*[0:len-1]/fs);
 xQ_trans = sqrt(2)*xQ.*sin(2*pi*fc*[0:len-1]/fs);
 
 
-transmitsignal = xI_trans + xQ_trans;
+transmitsignal = (xI_trans + xQ_trans)';
 
 save('transmitsignal.mat','transmitsignal')
 

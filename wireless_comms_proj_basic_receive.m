@@ -2,8 +2,17 @@ clear
 close all
 clc
 
-load receivedsignal.mat
-load transmitsignal.mat
+srrc = 0;
+
+if srrc == 1
+    load receivedsignal_SRRC.mat
+    load transmitsignal_SRRC.mat
+else
+    load receivedsignal_rect.mat
+    load transmitsignal_rect.mat
+end
+
+
 
 x_received = 10*receivedsignal;
 x_transmitted = transmitsignal;
@@ -22,14 +31,22 @@ LL = 200; % Total number of bits
 T = 1; % Symbol period in microsec
 N = 21; % length of filter in symbol periods
 alpha = 0.2; % alpha of sqrt raised cosine filter
-fc = 5; % Carrier Frequency in MHz
+fc = 12.5; % Carrier Frequency in MHz
 fs = 200; % Sampling frequency in MHz
 Ns = N*T*fs; % Number of filter samples
 
 %% Define Pulse
 
-p = firrcos(Ns,1/2/T,alpha,fs,'rolloff','sqrt'); 
-p = p/norm(p)/sqrt(1/fs); % '1/fs' simply serves as 'delta' to approximate integral as sum
+if srrc == 1
+    p = firrcos(Ns,1/2/T,alpha,fs,'rolloff','sqrt');
+    p = p/norm(p)/sqrt(1/fs); % '1/fs' simply serves as 'delta' to approximate integral as sum
+% Use rectangular pulse as one possible filter ???
+else
+    p = [zeros(ceil(Ns/2-T*fs/2),1);
+    ones(T*fs,1);
+    zeros(N-T*fs-ceil(Ns/2-T*fs/2),1) ];
+    p = p/norm(p)/sqrt(1/fs);
+end
 
 %% Define Matched Filter
 

@@ -172,3 +172,6 @@ end
 % Apply Sampling for the Zk bits
 % Apply some quantizing - Rohit recommends a One-Tap Channel
 % Run process to fully lay out the bits
+
+% one of these should provide an AWGN channel coming back to us which is a
+% good thing.

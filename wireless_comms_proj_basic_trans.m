@@ -39,13 +39,8 @@ xQ_up = upsample(xQ_base, fs);
 xI = conv(xI_up, p);
 xQ = conv(xQ_up, p);
 
-len = length(xI);
-
-xI_trans = sqrt(2)*xI.*cos(2*pi*fc*[0:len-1]/fs);
-xQ_trans = sqrt(2)*xQ.*sin(2*pi*fc*[0:len-1]/fs);
-
-
-transmitsignal = (xI_trans + xQ_trans)';
+transmitsignal = (xI + j*xQ);
+transmitsignal = reshape(transmitsignal, [], 1);
 
 save('transmitsignal.mat','transmitsignal')
 

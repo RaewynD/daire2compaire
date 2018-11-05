@@ -164,3 +164,11 @@ if graph == 1
     xlabel('Frequency in 1/samples')
 
 end
+
+%% Things needed on receiving end
+% Split into IQ
+% Apply Timing Recovery
+% Apply Matched Filter
+% Apply Sampling for the Zk bits
+% Apply some quantizing - Rohit recommends a One-Tap Channel
+% Run process to fully lay out the bits

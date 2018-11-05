@@ -52,7 +52,6 @@ zIk = zIk(1:LL);
 zQk = zQ(Ns+(2*whalflen)+1:fs*T:end); 
 zQk = zQk(1:LL);
 
-
 %% Detect bits
 xIk_hat = sign(zIk); 
 xQk_hat = sign(zQk);

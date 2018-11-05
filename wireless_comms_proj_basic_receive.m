@@ -5,15 +5,17 @@ clc
 srrc = 0;
 
 if srrc == 1
-    load receivedsignal_SRRC.mat
-    load transmitsignal_SRRC.mat
+    load receivedsignal_SRRC
+    load transmitsignal_SRRC
+    x_received = receivedsignal_SRRC;
+    x_transmitted = transmitsignal_SRRC;
 else
     load receivedsignal_RECT.mat
     load transmitsignal_RECT.mat
+    x_received = receivedsignal_RECT;
+    x_transmitted = transmitsignal_RECT;
 end
 
-x_received = receivedsignal;
-x_transmitted = transmitsignal;
 
 %% Grab and separate into REAL and IMAGINARY
 

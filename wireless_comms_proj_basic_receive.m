@@ -10,8 +10,8 @@ if srrc == 1
     x_received = receivedsignal_SRRC;
     x_transmitted = transmitsignal_SRRC;
 else
-    load receivedsignal_RECT.mat
-    load transmitsignal_RECT.mat
+    load receivedsignal_RECT
+    load transmitsignal_RECT
     x_received = receivedsignal_RECT;
     x_transmitted = transmitsignal_RECT;
 end

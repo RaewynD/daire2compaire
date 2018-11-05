@@ -72,8 +72,19 @@ zQk = zQ(Ns+(2*whalflen)+1:fs*T:end);
 zQk = zQk(1:LL);
 
 %% Detect bits - One Tap Channel
-xIk_hat = sign(zIk); 
-xQk_hat = sign(zQk);
+
+known_bits = [1,1,0,1,0,0,0,1,0,1];
+
+xIk = known_bits(1:2:end);
+xQk = known_bits(2:2:end);
+hoI_hat = (xI' * zIk) / (norm(xI)^2);
+hoQ_hat = (xQ' * zQk) / (norm(xQ)^2);
+
+vIk = zIk / hoI_hat;
+vQk = zQk / hoQ_hat;
+
+xIk_hat = sign(vIk); 
+xQk_hat = sign(vQk);
 bitI_hat = (xIk_hat>0);
 bitQ_hat = (xQk_hat>0);
 bits_hat = reshape([bitI_hat'; bitQ_hat'],2*LL,1);

@@ -77,8 +77,8 @@ known_bits = [1,1,0,1,0,0,0,1,0,1];
 
 xIk = known_bits(1:2:end);
 xQk = known_bits(2:2:end);
-hoI_hat = (xI' * zIk) / (norm(xI)^2);
-hoQ_hat = (xQ' * zQk) / (norm(xQ)^2);
+hoI_hat = (xIk' * zIk) / (norm(xIk)^2);
+hoQ_hat = (xQk' * zQk) / (norm(xQk)^2);
 
 vIk = zIk / hoI_hat;
 vQk = zQk / hoQ_hat;

@@ -12,12 +12,10 @@ else
     load transmitsignal_RECT.mat
 end
 
-
-
 x_received = 10*receivedsignal;
 x_transmitted = transmitsignal;
 
-%% Grab and separate into two files
+%% Grab and separate into REAL and IMAGINARY
 
 yI = real(x_received);
 yQ = imag(x_received);
@@ -58,6 +56,10 @@ whalflen = 20*fs*T;
 wsmoothhalflen = ceil(whalflen/100);
 
 
+%% Apply Timing Recovery
+
+
+
 %% Filter low pass signals with matched filter in each arm
 zI = conv(w,yI)*(1/fs); % '1/fs' simply serves as 'delta' to approximate integral as sum
 zQ = conv(w,yQ)*(1/fs); % '1/fs' simply serves as 'delta' to approximate integral as sum 
@@ -69,7 +71,7 @@ zIk = zIk(1:LL);
 zQk = zQ(Ns+(2*whalflen)+1:fs*T:end); 
 zQk = zQk(1:LL);
 
-%% Detect bits
+%% Detect bits - One Tap Channel
 xIk_hat = sign(zIk); 
 xQk_hat = sign(zQk);
 bitI_hat = (xIk_hat>0);

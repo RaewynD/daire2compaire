@@ -2,7 +2,7 @@ clear
 close all
 clc
 
-srrc = 0;
+srrc = 1;
 
 if srrc == 1
     load receivedsignal_SRRC
@@ -195,6 +195,22 @@ if graph == 1
     set(gca,'fontsize', 15)
     ylabel('abs(Y(f))')
     xlabel('Frequency in 1/samples')
+    
+    figure(4)
+    subplot(2,1,1);
+    stem([1:L/2],bitI_hat,'b')
+    hold on
+    stem([1:L/2],zIbits,'r')
+    ylabel('$x^I_k,   z^I_{k}$')
+    xlabel('discrete time  $k$  (sampled at $t=kT$)')
+    subplot(2,1,2);
+    stem([1:L/2],bitQ_hat,'b')
+    hold on
+    stem([1:L/2],zQbits,'r')
+    ylabel('$x^Q_k,   z^Q_{k}$')
+    xlabel('discrete time  $k$  (sampled at $t=kT$)')
+    linkaxes(ax,'x')
+    zoom xon
 
 end
 

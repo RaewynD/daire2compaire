@@ -66,10 +66,29 @@ zQ = conv(w,yQ)*(1/fs); % '1/fs' simply serves as 'delta' to approximate integra
 
 
 %% Sample filtered signal
+% TODO: offset by timing that we observed
 zIk = zI(Ns+(2*whalflen)+1:fs*T:end); 
-zIk = zIk(1:L);
+zIk_all = [];
+len = length(zI)
+for tic = 1:len
+    if(mod(length(zI),length(zIk)) == 0)
+        zIk_all = [zIk_all, zIk(length(zI) / length(zIk))];
+    else
+        zIk_all = [zIk_all, 0];
+    end
+end
+zIk = zIk(1:L/2);
 zQk = zQ(Ns+(2*whalflen)+1:fs*T:end); 
-zQk = zQk(1:L);
+zQk_all = [];
+len = length(zQ)
+for tic = 1:len
+    if(mod(length(zQ),length(zQk)) == 0)
+        zQk_all = [zQk_all, zQk(length(zQ) / length(zQk))];
+    else
+        zQk_all = [zQk_all, 0];
+    end
+end
+zQk = zQk(1:L/2);
 
 %% Detect bits - One Tap Channel
 
@@ -77,17 +96,19 @@ known_bits = [1,1,0,1,0,0,0,1,0,1];
 
 xIk = known_bits(1:2:end);
 xQk = known_bits(2:2:end);
-hoI_hat = (xIk' * zIk) / (norm(xIk)^2);
-hoQ_hat = (xQk' * zQk) / (norm(xQk)^2);
+hoI_hat = (xIk * zIk) / (norm(xIk)^2);
+hoQ_hat = (xQk * zQk) / (norm(xQk)^2);
 
 vIk = zIk / hoI_hat;
 vQk = zQk / hoQ_hat;
+
+vk = vIk + j*vQk;
 
 xIk_hat = sign(vIk); 
 xQk_hat = sign(vQk);
 bitI_hat = (xIk_hat>0);
 bitQ_hat = (xQk_hat>0);
-bits_hat = reshape([bitI_hat'; bitQ_hat'],2*L,1);
+bits_hat = reshape([bitI_hat'; bitQ_hat'],L,1)
 
 %% Part A - define constellation
 qam_range = 1:sqrt(qam);
@@ -128,7 +149,7 @@ if graph == 1
     set(gca,'DataAspectRatio',[1 1 1])
     grid on
     hold on
-    %D = max(sqrt(Ex)*1.5, sigma_n*1.5);
+    D = max(D, max(abs(vk))+1);
     axis([-D D -D D])
     plot([-D:D/100:D],zeros(size([-D:D/100:D])),'k','LineWidth',2)
     plot(zeros(size([-D:D/100:D])),[-D:D/100:D],'k','LineWidth',2)
@@ -138,13 +159,13 @@ if graph == 1
 
     title('Constellation Plot')
     plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
-    %for ii=1:L
-    %    plot(x_received(ii),'bx')
-    %    plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
-    %    if (rem(ii,100)==0)
-    %        pause(.00002)
-    %    end
-    %end
+    for ii=1:L/2
+        plot(vk(ii),'bx')
+        plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
+        if (rem(ii,100)==0)
+            pause(.00002)
+        end
+    end
 
 
     % Display signals
@@ -160,8 +181,10 @@ if graph == 1
     xlabel('Time in samples')
     subplot(2,1,2)
     plot(zI,'b')
+    plot(zIk_all,'c')
     hold on
     plot(zQ,'r')
+    plot(zQk_all,'m')
     set(gca,'fontsize', 15)
     zoom xon
     legend('real','imag')

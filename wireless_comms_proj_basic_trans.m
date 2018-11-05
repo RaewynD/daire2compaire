@@ -53,6 +53,11 @@ transmitsignal = reshape(transmitsignal, [], 1);
 
 save('transmitsignal.mat','transmitsignal')
 
+if (srrc == 1)
+    save('transmitsignal_srrc.mat','transmitsignal')
+else
+    save('transmitsignal_rect.mat','transmitsignal')
+end
 
 %% ---Helper Functions--- %%
 

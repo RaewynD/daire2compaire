@@ -32,9 +32,20 @@ p = p/norm(p)/sqrt(1/fs); % '1/fs' simply serves as 'delta' to approximate integ
 
 %% Define Matched Filter
 
+% Matched filter
+w = flipud(p);
+
+% A rectangular (ideal) RF filter of bandwidth 3/T (typically RF filter is quite broadband)
+whalflen = 20*fs*T;
+wsmoothhalflen = ceil(whalflen/100);
+wRFBW = 5/T;
+wRFbaseequivalent = conv(wRFBW*sinc([-whalflen+wsmoothhalflen+1:whalflen-wsmoothhalflen]'/fs*wRFBW), 1/(2*wsmoothhalflen+1)*ones(2*wsmoothhalflen+1,1));
+wRF = wRFbaseequivalent .* (2*cos(2*pi*fc*[-whalflen:whalflen-1]'/fs)); 
+wRF = wRF; 
 
 
-%Part A - define constellation
+
+%% Part A - define constellation
 qam_range = 1:sqrt(qam);
 qam_range = d*qam_range - 0.5*d - sqrt(qam)/2;
 constellation = [];

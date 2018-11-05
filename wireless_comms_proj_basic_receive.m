@@ -8,8 +8,8 @@ if srrc == 1
     load receivedsignal_SRRC.mat
     load transmitsignal_SRRC.mat
 else
-    load receivedsignal_rect.mat
-    load transmitsignal_rect.mat
+    load receivedsignal_RECT.mat
+    load transmitsignal_RECT.mat
 end
 
 

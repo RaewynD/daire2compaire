@@ -10,12 +10,12 @@ x_transmitted = transmitsignal;
 
 %% Grab and separate into two files
 
-yI = real(x_transmitted);
-yQ = imag(x_transmitted);
+yI = real(x_received);
+yQ = imag(x_received);
 
 %% Define User Values
 qam = 4;
-L = 5;
+L = length(x_received);
 graph = 1;
 D = 1;
 LL = 200; % Total number of bits
@@ -24,6 +24,7 @@ N = 21; % length of filter in symbol periods
 alpha = 0.2; % alpha of sqrt raised cosine filter
 fc = 5; % Carrier Frequency in MHz
 fs = 200; % Sampling frequency in MHz
+Ns = N*T*fs; % Number of filter samples
 
 %% Define Pulse
 
@@ -38,16 +39,30 @@ w = flipud(p);
 % A rectangular (ideal) RF filter of bandwidth 3/T (typically RF filter is quite broadband)
 whalflen = 20*fs*T;
 wsmoothhalflen = ceil(whalflen/100);
-wRFBW = 5/T;
-wRFbaseequivalent = conv(wRFBW*sinc([-whalflen+wsmoothhalflen+1:whalflen-wsmoothhalflen]'/fs*wRFBW), 1/(2*wsmoothhalflen+1)*ones(2*wsmoothhalflen+1,1));
-wRF = wRFbaseequivalent .* (2*cos(2*pi*fc*[-whalflen:whalflen-1]'/fs)); 
-wRF = wRF; 
 
 
+%% Filter low pass signals with matched filter in each arm
+zI = conv(w,yI)*(1/fs); % '1/fs' simply serves as 'delta' to approximate integral as sum
+zQ = conv(w,yQ)*(1/fs); % '1/fs' simply serves as 'delta' to approximate integral as sum 
+
+
+%% Sample filtered signal
+zIk = zI(Ns+(2*whalflen)+1:fs*T:end); 
+zIk = zIk(1:LL);
+zQk = zQ(Ns+(2*whalflen)+1:fs*T:end); 
+zQk = zQk(1:LL);
+
+
+%% Detect bits
+xIk_hat = sign(zIk); 
+xQk_hat = sign(zQk);
+bitI_hat = (xIk_hat>0);
+bitQ_hat = (xQk_hat>0);
+bits_hat = reshape([bitI_hat'; bitQ_hat'],2*LL,1);
 
 %% Part A - define constellation
 qam_range = 1:sqrt(qam);
-qam_range = d*qam_range - 0.5*d - sqrt(qam)/2;
+qam_range = D*qam_range - 0.5*D - sqrt(qam)/2;
 constellation = [];
  
 for xi = qam_range

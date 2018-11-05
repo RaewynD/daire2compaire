@@ -22,7 +22,7 @@ yQ = imag(x_received);
 
 %% Define User Values
 qam = 4;
-L = length(x_received);
+L = 10; % Number of bits in message
 graph = 1;
 D = 1;
 LL = 200; % Total number of bits
@@ -67,9 +67,9 @@ zQ = conv(w,yQ)*(1/fs); % '1/fs' simply serves as 'delta' to approximate integra
 
 %% Sample filtered signal
 zIk = zI(Ns+(2*whalflen)+1:fs*T:end); 
-zIk = zIk(1:LL);
+zIk = zIk(1:L);
 zQk = zQ(Ns+(2*whalflen)+1:fs*T:end); 
-zQk = zQk(1:LL);
+zQk = zQk(1:L);
 
 %% Detect bits - One Tap Channel
 
@@ -87,7 +87,7 @@ xIk_hat = sign(vIk);
 xQk_hat = sign(vQk);
 bitI_hat = (xIk_hat>0);
 bitQ_hat = (xQk_hat>0);
-bits_hat = reshape([bitI_hat'; bitQ_hat'],2*LL,1);
+bits_hat = reshape([bitI_hat'; bitQ_hat'],2*L,1);
 
 %% Part A - define constellation
 qam_range = 1:sqrt(qam);

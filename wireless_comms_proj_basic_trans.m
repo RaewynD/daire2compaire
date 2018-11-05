@@ -7,6 +7,7 @@ rng('default'); % Set seed for random number generator (for repeatability of sim
 
 %user defined values
 picture = 0;
+srrc = 1;
 
 d = 1;
 T = 1; % Symbol period in microsec
@@ -15,9 +16,17 @@ alpha = 0.2; % alpha of sqrt raised cosine filter
 fc = 12.5; % Carrier Frequency in MHz
 fs = 200; % Sampling frequency in MHz
 Ns = N*T*fs; % Number of filter samples
-p = firrcos(Ns,1/2/T,alpha,fs,'rolloff','sqrt');
-p = p/norm(p)/sqrt(1/fs); % '1/fs' simply serves as 'delta' to approximate integral as sum
-
+% Use sqrt-raised cosine filter form  ww=FIRRCOS(N,Fc,R,Fs,'rolloff',TYPE) as p^b(t)
+if srrc == 1
+    p = firrcos(Ns,1/2/T,alpha,fs,'rolloff','sqrt');
+    p = p/norm(p)/sqrt(1/fs); % '1/fs' simply serves as 'delta' to approximate integral as sum
+% Use rectangular pulse as one possible filter ???
+else
+    p = [zeros(ceil(Ns/2-T*fs/2),1);
+    ones(T*fs,1);
+    zeros(N-T*fs-ceil(Ns/2-T*fs/2),1) ];
+    p = p/norm(p)/sqrt(1/fs);
+end
 
 % Define binary transmission
 x1 = get_bits(picture);

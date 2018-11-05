@@ -79,11 +79,25 @@ len = min([length(xIk) length(xQk)]);
 
 zIbits = sign(zIk); 
 zQbits = sign(zQk);
-zIbits = (zIbits>0);
-zQbits = (zQbits>0);
+zIbits = (zIbits>0)';
+zQbits = (zQbits>0)';
 
-k = strfind(zIbits', xIk);
-l = strfind(zQbits', xQk);
+k = strfind(zIbits, xIk);
+l = strfind(zQbits, xQk);
+
+overlap = ismember(k,l);
+
+bits = 1:(min([length(zIbits) length(zQbits)])*2);
+for x = 1:(min([length(zIbits) length(zQbits)]))
+    bits(x*2-1) = zIbits(x);
+    bits(x*2) = zQbits(x);
+end
+
+m = strfind(bits, known_bits);
+
+if (isempty(m))
+    disp('Not in full bits...')
+end
 
 zIk_frame = zIk(k:k+len-1);
 zQk_frame = zQk(l:l+len-1);
@@ -102,7 +116,7 @@ xIk_hat = sign(vIk);
 xQk_hat = sign(vQk);
 bitI_hat = (xIk_hat>0);
 bitQ_hat = (xQk_hat>0);
-bits_hat = reshape([bitI_hat'; bitQ_hat'],L,1)
+bits_hat = reshape([bitI_hat'; bitQ_hat'],1,L)
 
 %% Part A - define constellation
 qam_range = 1:sqrt(qam);
@@ -148,8 +162,8 @@ if graph == 1
     plot([-D:D/100:D],zeros(size([-D:D/100:D])),'k','LineWidth',2)
     plot(zeros(size([-D:D/100:D])),[-D:D/100:D],'k','LineWidth',2)
     set(gca,'fontsize', 15)
-    xlabel('x^I, z^I')
-    ylabel('x^Q, z^Q')
+    xlabel('xI, zI')
+    ylabel('xQ, zQ')
 
     title('Constellation Plot')
     plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')

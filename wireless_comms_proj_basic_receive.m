@@ -71,20 +71,20 @@ for xi = qam_range
 end
 
 % Part C - make decision
-x_hat = zeros(L,1);
+%x_hat = zeros(L,1);
 
-P_error = 0;
-for x_count = 1:L
-    [min_dist, index] = min(abs(constellation - x_received(x_count)));
-    x_hat(x_count) = constellation(index);
-    if(x_hat(x_count) ~= x_transmitted(x_count))
-        P_error = P_error + 1;
-    end
-end
+%P_error = 0;
+%for x_count = 1:L
+%    [min_dist, index] = min(abs(constellation - x_received(x_count)));
+%    x_hat(x_count) = constellation(index);
+%    if(x_hat(x_count) ~= x_transmitted(x_count))
+%        P_error = P_error + 1;
+%    end
+%end
 
 % Calculate and print error performance
-Pe = P_error / L;
-fprintf('Symbols wrong: %f Symbol error rate Pe = %f\n',P_error, Pe)
+%Pe = P_error / L;
+%fprintf('Symbols wrong: %f Symbol error rate Pe = %f\n',P_error, Pe)
 
 if graph == 1
     constellationmarkersize = 6;
@@ -107,11 +107,43 @@ if graph == 1
 
     title('Constellation Plot')
     plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
-    for ii=1:L
-        plot(x_received(ii),'bx')
-        plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
-        if (rem(ii,100)==0)
-            pause(.00002)
-        end
-    end
+    %for ii=1:L
+    %    plot(x_received(ii),'bx')
+    %    plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
+    %    if (rem(ii,100)==0)
+    %        pause(.00002)
+    %    end
+    %end
+
+
+    % Display signals
+    figure(2)
+    clf
+    subplot(2,1,1)
+    plot(real(transmitsignal),'b')
+    hold on
+    plot(imag(transmitsignal),'r')
+    legend('real','imag')
+    ylabel('xI(t)  and  xQ(t)')
+    xlabel('Time in samples')
+    subplot(2,1,2)
+    plot(zI,'b')
+    hold on
+    plot(zQ,'r')
+    zoom xon
+    legend('real','imag')
+    ylabel('yI(t)  and  yQ(t)')
+    xlabel('Time in samples')
+
+    figure(3)
+    clf
+    subplot(2,1,1)
+    plot([0:length(transmitsignal)-1]/length(transmitsignal)-0.5, abs(fftshift(fft(transmitsignal))))
+    ylabel('abs(X(f))')
+    xlabel('Frequency in 1/samples')
+    subplot(2,1,2)
+    plot([0:length(receivedsignal)-1]/length(receivedsignal)-0.5, abs(fftshift(fft(receivedsignal))))
+    ylabel('abs(Y(f))')
+    xlabel('Frequency in 1/samples')
+
 end

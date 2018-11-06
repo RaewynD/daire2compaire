@@ -147,6 +147,7 @@ end
 
 if graph == 1
     constellationmarkersize = 6;
+    ax = [];
 
     close all
     figure(1)
@@ -178,6 +179,7 @@ if graph == 1
 
     % Display signals
     figure(2)
+    LargeFigure(gcf, 0.15); % Make figure large
     clf
     subplot(2,1,1)
     plot(real(transmitsignal),'b')
@@ -198,6 +200,7 @@ if graph == 1
     xlabel('Time in samples')
 
     figure(3)
+    LargeFigure(gcf, 0.15); % Make figure large
     clf
     subplot(2,1,1)
     plot([0:length(transmitsignal)-1]/length(transmitsignal)-0.5, abs(fftshift(fft(transmitsignal))))
@@ -211,22 +214,50 @@ if graph == 1
     xlabel('Frequency in 1/samples')
     
     figure(4)
-    subplot(2,1,1);
-    stem([1:L/2],bitI_hat,'b')
-    hold on
-    stem([1:L/2],zIbits,'r')
-    ylabel('$x^I_k,   z^I_{k}$')
+    LargeFigure(gcf, 0.15); % Make figure large
+    clf
+    ax(1) = subplot(2,1,1);
+    %stem([1:x],bitI_hat,'b')
+    %hold on
+    stem([1:x],zIbits,'r')
+    ylabel('$z^I_{k}$') %'$x^I_k,   z^I_{k}$'
     xlabel('discrete time  $k$  (sampled at $t=kT$)')
-    subplot(2,1,2);
-    stem([1:L/2],bitQ_hat,'b')
-    hold on
-    stem([1:L/2],zQbits,'r')
-    ylabel('$x^Q_k,   z^Q_{k}$')
+    ylim([-2 2]);
+    ax(2) = subplot(2,1,2);
+    %stem([1:x],bitQ_hat,'b')
+    %hold on
+    stem([1:x],zQbits,'b')
+    ylabel('$z^Q_{k}$') %'$x^Q_k,   z^Q_{k}$'
     xlabel('discrete time  $k$  (sampled at $t=kT$)')
+    ylim([-2 2]);
     linkaxes(ax,'x')
+    zoom xon
+    
+    figure(5)
+    LargeFigure(gcf, 0.15); % Make figure large
+    clf
+    ax1(1) = subplot(2,1,1);
+    stem([1:len],bitI_hat','b')
+    hold on
+    stem([1:len],bitQ_hat','r')
+    ylabel('$z^I_{k}, z^Q_{k}$') %'$x^I_k,   z^I_{k}$'
+    xlabel('discrete time  $k$  (sampled at $t=kT$)')
+    ylim([-2 2]);
+    ax1(2) = subplot(2,1,2);
+    %stem([1:x],bitQ_hat,'b')
+    %hold on
+    stem([1:L],bits_hat','k')
+    ylabel('$z_{k}$') %'$x^Q_k,   z^Q_{k}$'
+    xlabel('discrete time  $k$  (sampled at $t=kT$)')
+    ylim([-2 2]);
+    linkaxes(ax1,'x')
     zoom xon
 
 end
+
+pause;
+
+close all
 
 %% Things needed on receiving end
 % Split into IQ

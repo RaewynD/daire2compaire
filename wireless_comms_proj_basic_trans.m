@@ -126,6 +126,7 @@ set(gca,'fontsize', 15)
 %set(gca,'fontsize', 15)
 %zoom xon
 
+close all
 
 %% ---Helper Functions--- %%
 

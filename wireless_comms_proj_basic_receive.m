@@ -2,7 +2,7 @@ clear
 close all
 clc
 
-srrc = 1;
+srrc = 0;
 
 if srrc == 1
     load receivedsignal_SRRC
@@ -45,6 +45,8 @@ else
     zeros(N-T*fs-ceil(Ns/2-T*fs/2),1) ];
     p = p/norm(p)/sqrt(1/fs);
 end
+
+lenp = length(p);
 
 %% Define Matched Filter
 
@@ -181,24 +183,44 @@ if graph == 1
     figure(2)
     LargeFigure(gcf, 0.15); % Make figure large
     clf
-    subplot(2,1,1)
+    subplot(3,2,1);
+    plot([1:length(p)]/fs,p)
+    ylabel('$p^{transmit}(t)$')
+    set(gca,'fontsize', 15)
+    subplot(3,2,3);
     plot(real(transmitsignal),'b')
     hold on
     plot(imag(transmitsignal),'r')
-    set(gca,'fontsize', 15)
     legend('real','imag')
-    ylabel('xI(t)  and  xQ(t)')
+    ylabel('$x^{I}(t),    x^{Q}(t)$')
     xlabel('Time in samples')
-    subplot(2,1,2)
-    plot(zI,'b')
-    hold on
-    plot(zQ,'r')
     set(gca,'fontsize', 15)
+    subplot(3,2,2);
+    plot([-lenp/2+1:lenp/2]/lenp*fs,20*log10(abs(fftshift(1/sqrt(lenp)*fft(p)))))
+    ylabel('$|P^{transmit}(f)|$')
+    axis([-4*fc 4*fc -40 40])
+    set(gca,'fontsize', 15)
+    subplot(3,2,4);
+    plot([0:length(transmitsignal)-1]/length(transmitsignal)-0.5, abs(fftshift(fft(transmitsignal))))
+    ylabel('$|X^{base}(f)|$')
+    xlabel('Frequency in 1/samples')
+    set(gca,'fontsize', 15)
+    subplot(3,2,5)
+    plot(real(receivedsignal),'b')
+    hold on
+    plot(imag(receivedsignal),'r')
     zoom xon
     legend('real','imag')
-    ylabel('yI(t)  and  yQ(t)')
+    ylabel('$y^{I}(t),    y^{Q}(t)$')
     xlabel('Time in samples')
-
+    set(gca,'fontsize', 15)
+    subplot(3,2,6)
+    plot([0:length(receivedsignal)-1]/length(receivedsignal)-0.5, abs(fftshift(fft(receivedsignal))))
+    ylabel('$|Y^{base}(f)|$')
+    xlabel('Frequency in 1/samples')
+    set(gca,'fontsize', 15)
+    
+    
     figure(3)
     LargeFigure(gcf, 0.15); % Make figure large
     clf
@@ -237,9 +259,9 @@ if graph == 1
     LargeFigure(gcf, 0.15); % Make figure large
     clf
     ax1(1) = subplot(2,1,1);
-    stem([1:len],bitI_hat','b')
+    stem([1:len],xIk_hat','b')
     hold on
-    stem([1:len],bitQ_hat','r')
+    stem([1:len],xQk_hat','r')
     ylabel('$z^I_{k}, z^Q_{k}$') %'$x^I_k,   z^I_{k}$'
     xlabel('discrete time  $k$  (sampled at $t=kT$)')
     ylim([-2 2]);
@@ -257,7 +279,7 @@ end
 
 pause;
 
-close all
+figure(1)
 
 %% Things needed on receiving end
 % Split into IQ

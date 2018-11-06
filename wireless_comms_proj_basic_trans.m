@@ -13,7 +13,7 @@ rng('default'); % Set seed for random number generator (for repeatability of sim
 
 %user defined values
 picture = 0;
-srrc = 0;
+srrc = 1;
 
 d = 1;
 T = 1; % Symbol period in microsec

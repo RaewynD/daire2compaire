@@ -2,7 +2,7 @@
 %  Team: Daire2Compaire
 %  18-758 Wireless Communications
 %  Fall 2018
-
+ 
 %% --Main Receive Code-- %%
 
 clear
@@ -101,11 +101,11 @@ for x = 1:(min([length(zIbits) length(zQbits)]))
     bits(x*2) = zQbits(x);
 end
 
-m = strfind(bits, known_bits);
+%m = strfind(bits, known_bits);
 
-if (isempty(m))
-    disp('Not in full bits...')
-end
+%if (isempty(m))
+%    disp('Not in full bits...')
+%end
 
 zIk_frame = zIk(k:k+len-1);
 zQk_frame = zQk(l:l+len-1);
@@ -127,7 +127,7 @@ bitQ_hat = (xQk_hat>0);
 bits_hat = reshape([bitI_hat'; bitQ_hat'],1,L)
 
 % Compute Bit error rate (BER)
-BER = mean(bits_hat ~= bits(1:length(bits_hat)));
+BER = mean(bits_hat ~= known_bits);
 disp(['BER = ' num2str(BER)])
 disp(' ')
 

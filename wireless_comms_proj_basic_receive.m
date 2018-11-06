@@ -79,7 +79,7 @@ zQk = zQ(Ns+(2*whalflen)+1:fs*T:end);
 
 %% Frame Recovery
 
-known_bits = [1 1 0 1 0 0 0 1 0 1];
+known_bits = [0 0 0 0 0 1 1 1 1 0];
 
 xIk = known_bits(1:2:end);
 xQk = known_bits(2:2:end);
@@ -161,6 +161,8 @@ end
 if graph == 1
     constellationmarkersize = 6;
     ax = [];
+    cats = 0;
+    lono = 1:x;
 
     close all
     figure(1)
@@ -242,8 +244,12 @@ if graph == 1
     clf
     ax(1) = subplot(2,2,1);
     %stem([1:x],bitI_hat,'b')
-    %hold on
-    stem([1:x],zI_bits,'r')
+    hold on
+    stem(lono,zI_bits,'r')
+    for zee = 1:length(zIk_frame)
+        cat = find(zIk==zIk_frame(zee));
+        stem(lono(cat),zI_bits(cat),'b')
+    end
     ylabel('$z^I_{k}$') %'$x^I_k,   z^I_{k}$'
     xlabel('discrete time  $k$  (sampled at $t=kT$)')
     title('Sampler Output $z^I_{k}$')
@@ -251,8 +257,12 @@ if graph == 1
     set(gca,'fontsize', 15)
     ax(2) = subplot(2,2,2);
     %stem([1:x],bitQ_hat,'b')
-    %hold on
-    stem([1:x],zQ_bits,'b')
+    hold on
+    stem(lono,zQ_bits,'b')
+    for zee = 1:length(zQk_frame)
+        cat = find(zQk==zQk_frame(zee));
+        stem(lono(cat),zQ_bits(cat),'r')
+    end
     ylabel('$z^Q_{k}$') %'$x^Q_k,   z^Q_{k}$'
     xlabel('discrete time  $k$  (sampled at $t=kT$)')
     title('Sampler Output $z^Q_{k}$')

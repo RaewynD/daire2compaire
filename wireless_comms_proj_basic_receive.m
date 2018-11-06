@@ -79,10 +79,10 @@ xIk = known_bits(1:2:end);
 xQk = known_bits(2:2:end);
 len = min([length(xIk) length(xQk)]);
 
-zIbits = sign(zIk); 
-zQbits = sign(zQk);
-zIbits = (zIbits>0)';
-zQbits = (zQbits>0)';
+zI_bits = sign(zIk); 
+zQ_bits = sign(zQk);
+zIbits = (zI_bits>0)';
+zQbits = (zQ_bits>0)';
 
 k = strfind(zIbits, xIk);
 l = strfind(zQbits, xQk);
@@ -165,8 +165,8 @@ if graph == 1
     plot([-D:D/100:D],zeros(size([-D:D/100:D])),'k','LineWidth',2)
     plot(zeros(size([-D:D/100:D])),[-D:D/100:D],'k','LineWidth',2)
     set(gca,'fontsize', 15)
-    xlabel('xI, zI')
-    ylabel('xQ, zQ')
+    xlabel('$x^{I}$, $z^{I}$')
+    ylabel('$x^{Q}$, $z^{Q}$')
 
     title('Constellation Plot')
     plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
@@ -179,7 +179,7 @@ if graph == 1
     end
 
 
-    % Display signals
+    % Display signals in time and frequency domain
     figure(2)
     LargeFigure(gcf, 0.15); % Make figure large
     clf
@@ -220,66 +220,51 @@ if graph == 1
     xlabel('Frequency in 1/samples')
     set(gca,'fontsize', 15)
     
-    
     figure(3)
     LargeFigure(gcf, 0.15); % Make figure large
     clf
-    subplot(2,1,1)
-    plot([0:length(transmitsignal)-1]/length(transmitsignal)-0.5, abs(fftshift(fft(transmitsignal))))
-    set(gca,'fontsize', 15)
-    ylabel('abs(X(f))')
-    xlabel('Frequency in 1/samples')
-    subplot(2,1,2)
-    plot([0:length(receivedsignal)-1]/length(receivedsignal)-0.5, abs(fftshift(fft(receivedsignal))))
-    set(gca,'fontsize', 15)
-    ylabel('abs(Y(f))')
-    xlabel('Frequency in 1/samples')
-    
-    figure(4)
-    LargeFigure(gcf, 0.15); % Make figure large
-    clf
-    ax(1) = subplot(2,1,1);
+    ax(1) = subplot(2,2,1);
     %stem([1:x],bitI_hat,'b')
     %hold on
-    stem([1:x],zIbits,'r')
+    stem([1:x],zI_bits,'r')
     ylabel('$z^I_{k}$') %'$x^I_k,   z^I_{k}$'
     xlabel('discrete time  $k$  (sampled at $t=kT$)')
+    title('Sampler Output $z^I_{k}$')
     ylim([-2 2]);
-    ax(2) = subplot(2,1,2);
+    set(gca,'fontsize', 15)
+    ax(2) = subplot(2,2,2);
     %stem([1:x],bitQ_hat,'b')
     %hold on
-    stem([1:x],zQbits,'b')
+    stem([1:x],zQ_bits,'b')
     ylabel('$z^Q_{k}$') %'$x^Q_k,   z^Q_{k}$'
     xlabel('discrete time  $k$  (sampled at $t=kT$)')
+    title('Sampler Output $z^Q_{k}$')
     ylim([-2 2]);
-    linkaxes(ax,'x')
-    zoom xon
-    
-    figure(5)
-    LargeFigure(gcf, 0.15); % Make figure large
-    clf
-    ax1(1) = subplot(2,1,1);
+    set(gca,'fontsize', 15)
+    subplot(2,2,3);
     stem([1:len],xIk_hat','b')
     hold on
     stem([1:len],xQk_hat','r')
-    ylabel('$z^I_{k}, z^Q_{k}$') %'$x^I_k,   z^I_{k}$'
+    ylabel('$v^I_{k}, v^Q_{k}$') %'$v^I_k,   v^I_{k}$'
     xlabel('discrete time  $k$  (sampled at $t=kT$)')
+    title('Equalizer $v_{k}$ output samples')
+    set(gca,'fontsize', 15)
     ylim([-2 2]);
-    ax1(2) = subplot(2,1,2);
+    subplot(2,2,4);
     %stem([1:x],bitQ_hat,'b')
     %hold on
     stem([1:L],bits_hat','k')
     ylabel('$z_{k}$') %'$x^Q_k,   z^Q_{k}$'
     xlabel('discrete time  $k$  (sampled at $t=kT$)')
+    title('Decoded Bits $z_{k}$')
     ylim([-2 2]);
-    linkaxes(ax1,'x')
+    set(gca,'fontsize', 15)
+    linkaxes(ax,'x')
     zoom xon
 
 end
 
-pause;
 
-figure(1)
 
 %% Things needed on receiving end
 % Split into IQ

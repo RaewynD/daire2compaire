@@ -70,7 +70,7 @@ else
     load transmitsignal_RECT
 end
 
-%% Plot time domain signals
+%% Plot time and frequency domain signals
 
 figure(1)
 LargeFigure(gcf, 0.15); % Make figure large

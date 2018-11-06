@@ -1,3 +1,9 @@
+%% Raewyn Duvall and Emmanuel Aire-Oaihimire 
+%  Team: Daire2Compaire
+%  18-758 Wireless Communications
+%  Fall 2018
+
+
 %% --Main Transmit Code-- %%
 
 clear
@@ -84,7 +90,7 @@ plot(real(transmitsignal),'b')
 hold on
 plot(imag(transmitsignal),'r')
 legend('real','imag')
-ylabel('$x^{I}(t),    x^{Q}(t)$')
+ylabel('$x^{I}(t)$,  $x^{Q}(t)$')
 xlabel('Time in samples')
 set(gca,'fontsize', 15)
 subplot(3,2,2);
@@ -103,7 +109,7 @@ hold on
 plot(imag(receivedsignal),'r')
 zoom xon
 legend('real','imag')
-ylabel('$y^{I}(t),    y^{Q}(t)$')
+ylabel('$y^{I}(t)$,  $y^{Q}(t)$')
 xlabel('Time in samples')
 set(gca,'fontsize', 15)
 subplot(3,2,6)

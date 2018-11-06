@@ -1,8 +1,15 @@
+%% Emmanuel Aire-Oaihimire and Raewyn Duvall
+%  Team: Daire2Compaire
+%  18-758 Wireless Communications
+%  Fall 2018
+
+%% --Main Receive Code-- %%
+
 clear
 close all
 clc
 
-srrc = 0;
+srrc = 1;
 
 if srrc == 1
     load receivedsignal_SRRC
@@ -25,7 +32,6 @@ qam = 4;
 L = 10; % Number of bits in message
 graph = 1;
 D = 1;
-LL = 200; % Total number of bits
 T = 1; % Symbol period in microsec
 N = 21; % length of filter in symbol periods
 alpha = 0.2; % alpha of sqrt raised cosine filter
@@ -120,7 +126,12 @@ bitI_hat = (xIk_hat>0);
 bitQ_hat = (xQk_hat>0);
 bits_hat = reshape([bitI_hat'; bitQ_hat'],1,L)
 
-%% Part A - define constellation
+% Compute Bit error rate (BER)
+BER = mean(bits_hat ~= bits(1:length(bits_hat)));
+disp(['BER = ' num2str(BER)])
+disp(' ')
+
+%% Define Constellation
 qam_range = 1:sqrt(qam);
 qam_range = D*qam_range - 0.5*D - sqrt(qam)/2;
 constellation = [];
@@ -186,6 +197,7 @@ if graph == 1
     subplot(3,2,1);
     plot([1:length(p)]/fs,p)
     ylabel('$p^{transmit}(t)$')
+    title('Pulse Signal p(t)')
     set(gca,'fontsize', 15)
     subplot(3,2,3);
     plot(real(transmitsignal),'b')
@@ -194,16 +206,19 @@ if graph == 1
     legend('real','imag')
     ylabel('$x^{I}(t),    x^{Q}(t)$')
     xlabel('Time in samples')
+    title('Transmit Signal')
     set(gca,'fontsize', 15)
     subplot(3,2,2);
     plot([-lenp/2+1:lenp/2]/lenp*fs,20*log10(abs(fftshift(1/sqrt(lenp)*fft(p)))))
     ylabel('$|P^{transmit}(f)|$')
+    title('Pulse Signal in Frequency Domain')
     axis([-4*fc 4*fc -40 40])
     set(gca,'fontsize', 15)
     subplot(3,2,4);
     plot([0:length(transmitsignal)-1]/length(transmitsignal)-0.5, abs(fftshift(fft(transmitsignal))))
     ylabel('$|X^{base}(f)|$')
     xlabel('Frequency in 1/samples')
+    title('Transimt Signal in Frequency Domain')
     set(gca,'fontsize', 15)
     subplot(3,2,5)
     plot(real(receivedsignal),'b')
@@ -211,13 +226,15 @@ if graph == 1
     plot(imag(receivedsignal),'r')
     zoom xon
     legend('real','imag')
-    ylabel('$y^{I}(t),    y^{Q}(t)$')
+    ylabel('$y^{I}(t)$,  $y^{Q}(t)$')
     xlabel('Time in samples')
+    title('Received Signal')
     set(gca,'fontsize', 15)
     subplot(3,2,6)
     plot([0:length(receivedsignal)-1]/length(receivedsignal)-0.5, abs(fftshift(fft(receivedsignal))))
     ylabel('$|Y^{base}(f)|$')
     xlabel('Frequency in 1/samples')
+    title('Received Signal in Frequency Domain')
     set(gca,'fontsize', 15)
     
     figure(3)
@@ -266,7 +283,7 @@ end
 
 
 
-%% Things needed on receiving end
+%% To Do List:
 % Split into IQ
 % Apply Timing Recovery
 % Apply Matched Filter

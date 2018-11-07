@@ -9,64 +9,87 @@
 clear
 close all
 clc
-rng('default'); % Set seed for random number generator (for repeatability of simulation)
+% Set seed for random number generator (for repeatability of simulation)
+rng('default');
 
 %user defined values
-picture = 0;
-srrc = 1;
+picture = -1;
+srrc = 0;
 
 d = 1;
-T = 1; % Symbol period in microsec
-N = 21; % length of filter in symbol periods
-alpha = 0.2; % alpha of sqrt raised cosine filter
-fc = 12.5; % Carrier Frequency in MHz
-fs = 200; % Sampling frequency in MHz
-Ns = N*T*fs; % Number of filter samples
-% Use sqrt-raised cosine filter form  ww=FIRRCOS(N,Fc,R,Fs,'rolloff',TYPE) as p^b(t)
+
+fs = 200e6; %sampling
+Ts = 1/fs;
+
+fn = 12.5e6; %nyquist
+Tn = 1/fn;
+
+T_sym = 100*Tn; %sec / symbol
+F_sym = 1/T_sym;
+
+symLen = T_sym * fs; %samples per symbol
+
+a = 0.2;
+
+% Use sqrt-raised cosine filter form 
+% ww=FIRRCOS(N,Fc,R,Fs,'rolloff',TYPE) as p^b(t)
 if srrc == 1
-    p = firrcos(Ns,1/2/T,alpha,fs,'rolloff','sqrt');
-    p = p/norm(p)/sqrt(1/fs); % '1/fs' simply serves as 'delta' to approximate integral as sum
-% Use rectangular pulse as one possible filter ???
+    p = firrcos(Ns, 1/2/T_sym, a, fs, 'rolloff', 'sqrt');
+    % '1/fs' simply serves as 'delta' to approximate integral as sum
+    p = p/norm(p)/sqrt(1/fs);
+% Use rectangular pulse as filter
 else
-    p = [zeros(ceil(Ns/2-T*fs/2),1);
-    ones(T*fs,1);
-    zeros(N-T*fs-ceil(Ns/2-T*fs/2),1) ];
+    p = [zeros(ceil(symLen/4),1);
+         ones(ceil(symLen/2),1);
+         zeros(ceil(symLen/4),1)];
     p = p/norm(p)/sqrt(1/fs);
 end
 
+% should be same as symLen
 lenp = length(p);
 
-% Define binary transmission
-x1 = get_bits(picture);
-x_size = size(x1);
-x_size = x_size(2);
-
-if mod(x_size,2) ~= 0
-    x1 = [x1,0];
+%% Define binary transmission
+freq = get_bits(0);
+timing = get_bits(1);
+pilot = get_bits(1);
+msg = get_bits(picture);
+% make sure even number of bits so real and img are equal length
+if mod(length(msg), 2) ~= 0
+    msg = [msg, 0];
 end
 
+x1 = [freq, timing, pilot, msg, pilot];
+
+% make 1 and -1
 x2 = 2*x1-1;
 x2 = x2';
 
+% make scaled to qam
 xI_base = x2(1:2:end)*(0.5*d);
 xQ_base = x2(2:2:end)*(0.5*d);
 
-xI_up = upsample(xI_base, fs);
-xQ_up = upsample(xQ_base, fs);
+% convolve with pulse
+xI_up = upsample(xI_base, fs/F_sym);
+xQ_up = upsample(xQ_base, fs/F_sym);
 xI = conv(xI_up, p);
 xQ = conv(xQ_up, p);
-len = min([length(xI) length(xQ)]);
 
+%% transmit complex symbols
 transmitsignal = (xI + j*xQ);
 transmitsignal = reshape(transmitsignal, [], 1);
 
 save('transmitsignal.mat','transmitsignal')
+
+% save for analysis in receive
+save transmitpreamble.mat timing pilot msg
 
 if srrc == 1
     save('transmitsignal_SRRC.mat','transmitsignal')
 else
     save('transmitsignal_RECT.mat','transmitsignal')
 end
+
+%% Plot time and frequency domain signals
 
 if srrc == 1
     load receivedsignal_SRRC
@@ -75,8 +98,6 @@ else
     load receivedsignal_RECT
     load transmitsignal_RECT
 end
-
-%% Plot time and frequency domain signals
 
 figure(1)
 LargeFigure(gcf, 0.15); % Make figure large
@@ -132,6 +153,12 @@ set(gca,'fontsize', 15)
 % get bit array from picture to transmit
 function bits = get_bits(pic)
     switch pic
+        case 0
+            bits = ones(1,50);
+        case 1
+            bits = randi([0 1],1,50);
+        case 10
+            bits = [1 1 0 1 0 0 0 1 0 1];
         case 88
             A = imread('shannon88.bmp');
             bits = A(:);
@@ -161,7 +188,7 @@ function bits = get_bits(pic)
             bits = A(:);
             bits = bits';
         otherwise
-            bits = [1,1,0,1,0,0,0,1,0,1];
+            bits = [1 1 0 1 0 0 0 1 0 1];
     end
 end
 

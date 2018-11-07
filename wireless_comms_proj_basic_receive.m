@@ -9,7 +9,7 @@ clear
 close all
 clc
 
-srrc = 1;
+srrc = 0;
 
 if srrc == 1
     load receivedsignal_SRRC
@@ -18,6 +18,8 @@ else
     load receivedsignal_RECT
     load transmitsignal_RECT
 end
+
+load transmitpreamble
 
 x_received = receivedsignal;
 x_transmitted = transmitsignal;
@@ -77,7 +79,46 @@ zQ = conv(w,yQ)*(1/fs); % '1/fs' simply serves as 'delta' to approximate integra
 zIk = zI(Ns+(2*whalflen)+1:fs*T:end); 
 zQk = zQ(Ns+(2*whalflen)+1:fs*T:end); 
 
+zk = 1:(2*length(zIk));
+for z = 1:length(zIk)
+    zk(2*z - 1) = zIk(z);
+    zk(2*z) = zQk(z);
+end
+
 %% Frame Recovery
+
+fIk = frame(1:2:end);
+fQk = frame(2:2:end);
+len = min([length(fIk) length(fQk)]);
+
+zI_bits = sign(zIk); 
+zQ_bits = sign(zQk);
+zIbits = (zI_bits>0)';
+zQbits = (zQ_bits>0)';
+
+max_f = 1;
+max_count = 0;
+for f = 1:(length(zIbits) - len)
+    zI_check = zIbits(f:f+len-1);
+    zQ_check = zQbits(f:f+len-1);
+    count = 0;
+    for l = 1:len
+        if (zI_check(l) == fIk(l))
+            count = count + 1;
+        end
+        if (zQ_check(l) == fQk(l))
+            count = count + 1;
+        end
+    end
+    if count > max_count
+        max_count = count;
+        max_f = f;
+    end
+end
+
+
+
+%% Find Message
 
 known_bits = [1 1 0 1 0 0 0 1 0 1];
 
@@ -85,10 +126,10 @@ xIk = known_bits(1:2:end);
 xQk = known_bits(2:2:end);
 len = min([length(xIk) length(xQk)]);
 
-zI_bits = sign(zIk); 
-zQ_bits = sign(zQk);
-zIbits = (zI_bits>0)';
-zQbits = (zQ_bits>0)';
+%zI_bits = sign(zIk); 
+%zQ_bits = sign(zQk);
+%zIbits = (zI_bits>0)';
+%zQbits = (zQ_bits>0)';
 
 k = strfind(zIbits, xIk);
 l = strfind(zQbits, xQk);

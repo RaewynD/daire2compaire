@@ -9,7 +9,9 @@ clear
 close all
 clc
 
+% Define User Values
 srrc = 0;
+real_time = 1;
 
 if srrc == 1
     load receivedsignal_SRRC
@@ -19,74 +21,67 @@ else
     load transmitsignal_RECT
 end
 
-load transmitpreamble
-
-x_received = receivedsignal;
-x_transmitted = transmitsignal;
-
-%% Grab and separate into REAL and IMAGINARY
-
-yI = real(x_received);
-yQ = imag(x_received);
-
-%% Define User Values
-qam = 4;
-L = 10; % Number of bits in message
-graph = 1;
-D = 1;
-T = 1; % Symbol period in microsec
-N = 21; % length of filter in symbol periods
-alpha = 0.2; % alpha of sqrt raised cosine filter
-fc = 12.5; % Carrier Frequency in MHz
-fs = 200; % Sampling frequency in MHz
-Ns = N*T*fs; % Number of filter samples
-
-%% Define Pulse
-
-if srrc == 1
-    p = firrcos(Ns,1/2/T,alpha,fs,'rolloff','sqrt');
-    p = p/norm(p)/sqrt(1/fs); % '1/fs' simply serves as 'delta' to approximate integral as sum
-% Use rectangular pulse as one possible filter ???
-else
-    p = [zeros(ceil(Ns/2-T*fs/2),1);
-    ones(T*fs,1);
-    zeros(N-T*fs-ceil(Ns/2-T*fs/2),1) ];
-    p = p/norm(p)/sqrt(1/fs);
+if real_time == 1
+    load receivedsignal
 end
 
-lenp = length(p);
-
-%% Define Matched Filter
+load global_vars
+%d fs Ts fn Tn T_sym F_sym symLen a p timing pilot msg
 
 % Matched filter
 w = flipud(p);
 
-% A rectangular (ideal) RF filter of bandwidth 3/T (typically RF filter is quite broadband)
-whalflen = 20*fs*T;
-wsmoothhalflen = ceil(whalflen/100);
+y_received = receivedsignal;
+x_transmitted = transmitsignal;
 
+graph = 1;
 
 %% Apply Timing Recovery
 
+timing_sent = 2*timing - 1;
+timing_sent = timing_sent';
+timing_I = timing_sent(1:2:end)*(0.5*d);
+timing_Q = timing_sent(2:2:end)*(0.5*d);
 
+timing_I = upsample(timing_I, fs/F_sym);
+timing_Q = upsample(timing_Q, fs/F_sym);
+timing_I = conv(timing_I, p);
+timing_Q = conv(timing_Q, p);
+
+timing_sent = timing_I + j*timing_Q;
+timing_sent = reshape(timing_sent, [], 1);
+
+[corr, corr_tau] = xcorr(timing_sent, y_received);
+[~, offset] = max(abs(corr));
+tau = abs(corr_tau(offset)+1);
+
+y_received = y_received(tau:end);
+
+%% Grab and separate into REAL and IMAGINARY
+
+yI = real(y_received);
+yQ = imag(y_received);
 
 %% Filter low pass signals with matched filter in each arm
-zI = conv(w,yI)*(1/fs); % '1/fs' simply serves as 'delta' to approximate integral as sum
-zQ = conv(w,yQ)*(1/fs); % '1/fs' simply serves as 'delta' to approximate integral as sum 
 
+% '1/fs' simply serves as 'delta' to approximate integral as sum
+zI = conv(w,yI)*(1/fs);
+zQ = conv(w,yQ)*(1/fs);
 
 %% Sample filtered signal
-zIk = zI(Ns+(2*whalflen)+1:fs*T:end); 
-zQk = zQ(Ns+(2*whalflen)+1:fs*T:end); 
 
-zk = 1:(2*length(zIk));
-for z = 1:length(zIk)
-    zk(2*z - 1) = zIk(z);
-    zk(2*z) = zQk(z);
+k = 1;
+zIk = [];
+zQk = [];
+for s = length(w)+1:T_sym/Ts:length(zI)
+    zIk(k) = zI(s);
+    zQk(k) = zQ(s);
+    k = k+1;
 end
 
 %% Frame Recovery
 
+%{
 fIk = frame(1:2:end);
 fQk = frame(2:2:end);
 len = min([length(fIk) length(fQk)]);
@@ -115,7 +110,7 @@ for f = 1:(length(zIbits) - len)
         max_f = f;
     end
 end
-
+%}
 
 
 %% Find Message

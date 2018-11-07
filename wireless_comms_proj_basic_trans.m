@@ -16,6 +16,10 @@ rng('default');
 picture = -1;
 srrc = 0;
 
+% MUST BE EVEN
+global preamble_size;
+preamble_size = 20;
+
 d = 1;
 
 fs = 200e6; %sampling
@@ -65,8 +69,8 @@ x2 = 2*x1-1;
 x2 = x2';
 
 % make scaled to qam
-xI_base = x2(1:2:end)*(0.5*d);
-xQ_base = x2(2:2:end)*(0.5*d);
+xI_base = x2(1:2:end);
+xQ_base = x2(2:2:end);
 
 % convolve with pulse
 xI_up = upsample(xI_base, fs/F_sym);
@@ -76,12 +80,13 @@ xQ = conv(xQ_up, p);
 
 %% transmit complex symbols
 transmitsignal = (xI + j*xQ);
+transmitsignal = transmitsignal/max(abs(transmitsignal));
 transmitsignal = reshape(transmitsignal, [], 1);
 
 save('transmitsignal.mat','transmitsignal')
 
 % save for analysis in receive
-save transmitpreamble.mat timing pilot msg
+save global_vars.mat d fs Ts fn Tn T_sym F_sym symLen a p timing pilot msg
 
 if srrc == 1
     save('transmitsignal_SRRC.mat','transmitsignal')
@@ -147,16 +152,20 @@ set(gca,'fontsize', 15)
 %set(gca,'fontsize', 15)
 %zoom xon
 
+close all
 
 %% ---Helper Functions--- %%
 
 % get bit array from picture to transmit
 function bits = get_bits(pic)
+
+    global preamble_size;
+
     switch pic
         case 0
-            bits = ones(1,50);
+            bits = ones(1,preamble_size);
         case 1
-            bits = randi([0 1],1,50);
+            bits = randi([0 1],1,preamble_size);
         case 10
             bits = [1 1 0 1 0 0 0 1 0 1];
         case 88

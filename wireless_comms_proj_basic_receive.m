@@ -81,36 +81,21 @@ end
 
 %% Frame Recovery
 
-%{
-fIk = frame(1:2:end);
-fQk = frame(2:2:end);
-len = min([length(fIk) length(fQk)]);
+fIk = pilot(1:2:end);
+fQk = pilot(2:2:end);
+
 
 zI_bits = sign(zIk); 
 zQ_bits = sign(zQk);
 zIbits = (zI_bits>0)';
 zQbits = (zQ_bits>0)';
 
-max_f = 1;
-max_count = 0;
-for f = 1:(length(zIbits) - len)
-    zI_check = zIbits(f:f+len-1);
-    zQ_check = zQbits(f:f+len-1);
-    count = 0;
-    for l = 1:len
-        if (zI_check(l) == fIk(l))
-            count = count + 1;
-        end
-        if (zQ_check(l) == fQk(l))
-            count = count + 1;
-        end
-    end
-    if count > max_count
-        max_count = count;
-        max_f = f;
-    end
-end
-%}
+[corr, corr_tau] = xcorr(fIk, zIbits);
+[~, offset] = max(abs(corr));
+tau = abs(corr_tau(offset)+1);
+pilotI = zIbits(tau:tau+length(fIk));
+
+len = min([length(fIk) length(fQk)]);
 
 
 %% Find Message

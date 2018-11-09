@@ -81,6 +81,8 @@ k = 1;
 zIk = [];
 zQk = [];
 for s = length(w)+1:T_sym/Ts:length(zI)
+    zk(k*2-1) = zI(s);
+    zk(k*2) = zQ(s);
     zIk(k) = zI(s);
     zQk(k) = zQ(s);
     k = k+1;
@@ -89,21 +91,28 @@ end
 
 %% Frame Recovery
 
-fIk = pilot(1:2:end);
-fQk = pilot(2:2:end);
+%fIk = pilot(1:2:end);
+%fQk = pilot(2:2:end);
 
-zI_bits = sign(zIk); 
-zQ_bits = sign(zQk);
-zIbits = (zI_bits>0)';
-zQbits = (zQ_bits>0)';
+%zI_bits = sign(zIk); 
+%zQ_bits = sign(zQk);
+%zIbits = (zI_bits>0)';
+%zQbits = (zQ_bits>0)';
+zk_sing = sign(zk);
+zk_bits = (zk_sing>0);
 
-[corr, corr_tau] = xcorr(fIk, zIbits);
+[corr, corr_tau] = xcorr(pilot, zk_bits);
 [~, offset] = max(abs(corr));
 tau = abs(corr_tau(offset)+1);
-pilotI = zIbits(tau:tau+length(fIk));
+pilot_eye = zk_bits(tau:tau+length(pilot)-1);
 %plot abs corr to see what it looks like
 
-len = min([length(fIk) length(fQk)]);
+len = length(pilot);
+
+ho_hat = (pilot * pilot_eye') / (norm(pilot)^2);
+vee_k = zk(tau:end)/ho_hat;
+vee_k = sign(vee_k);
+vee_k = (vee_k>0);
 
 
 %% Find Message

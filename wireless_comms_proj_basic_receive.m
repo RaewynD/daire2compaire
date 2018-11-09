@@ -8,10 +8,12 @@
 clear
 close all
 %clc
+rng('default');
 
 % Define User Values
 srrc = 0;
-real_time = 0;
+real_time = 1;
+AWGN = 1;
 
 if srrc == 1
     load receivedsignal_SRRC
@@ -23,6 +25,16 @@ end
 
 if real_time == 1
     load receivedsignal
+end
+
+if AWGN == 1
+    M = 4; % M-QAM
+    d = 1; % Minimum distance 
+    SNR_mfb_dB = 4; % SNR_MFB in dB.  
+    E_x = d^2/(6*(M-1)); % Calculate the Symbol Energy
+    SNR_mfb_dB = 10^(SNR_mfb_dB/10); % Calculate the SNR
+    sigma = sqrt(E_x/SNR_mfb_dB); % Calculate the STD Dev
+    receivedsignal = transmitsignal + sigma/sqrt(2)*(randn(size(transmitsignal))+j*randn(size(transmitsignal)));
 end
 
 load global_vars
@@ -54,10 +66,10 @@ timing_Q = conv(timing_Q, p);
 timing_sent = timing_I + j*timing_Q;
 timing_sent = reshape(timing_sent, [], 1);
 
-[corr, corr_tau] = xcorr(timing_sent, y_received);
+[corrr, corrr_tau] = xcorr(timing_sent, y_received);
 % plot abs of corr
-[~, offset] = max(abs(corr));
-tau = abs(corr_tau(offset)+1);
+[~, offset] = max(abs(corrr));
+tau = abs(corrr_tau(offset))+1;
 % tau are the actual offsets
 % corr tau = offsets of correlations
 
@@ -81,8 +93,8 @@ k = 1;
 zIk = [];
 zQk = [];
 for s = length(w)+1:T_sym/Ts:length(zI)
-    zk(k*2-1) = zI(s);
-    zk(k*2) = zQ(s);
+    zk(k*2-1) = zI(s); %odds
+    zk(k*2) = zQ(s); %evens
     zIk(k) = zI(s);
     zQk(k) = zQ(s);
     k = k+1;
@@ -103,7 +115,7 @@ zk_bits = (zk_sing>0);
 
 [corr, corr_tau] = xcorr(pilot, zk_bits);
 [~, offset] = max(abs(corr));
-tau = abs(corr_tau(offset)+1);
+tau = abs(corr_tau(offset))+1;
 pilot_eye = zk_bits(tau:tau+length(pilot)-1);
 %plot abs corr to see what it looks like
 

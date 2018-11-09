@@ -15,6 +15,7 @@ rng('default');
 %user defined values
 picture = -1;
 srrc = 0;
+showplot = 0;
 
 % MUST BE EVEN
 global preamble_size;
@@ -104,45 +105,52 @@ else
     load transmitsignal_RECT
 end
 
-figure(1)
-LargeFigure(gcf, 0.15); % Make figure large
-clf
-subplot(3,2,1);
-plot([1:length(p)]/fs,p)
-ylabel('$p^{transmit}(t)$')
-set(gca,'fontsize', 15)
-subplot(3,2,3);
-plot(real(transmitsignal),'b')
-hold on
-plot(imag(transmitsignal),'r')
-legend('real','imag')
-ylabel('$x^{I}(t)$,  $x^{Q}(t)$')
-xlabel('Time in samples')
-set(gca,'fontsize', 15)
-subplot(3,2,2);
-plot([-lenp/2+1:lenp/2]/lenp*fs,20*log10(abs(fftshift(1/sqrt(lenp)*fft(p)))))
-ylabel('$|P^{transmit}(f)|$')
-axis([-4*fc 4*fc -40 40])
-set(gca,'fontsize', 15)
-subplot(3,2,4);
-plot([0:length(transmitsignal)-1]/length(transmitsignal)-0.5, abs(fftshift(fft(transmitsignal))))
-ylabel('$|X^{base}(f)|$')
-xlabel('Frequency in 1/samples')
-set(gca,'fontsize', 15)
-subplot(3,2,5)
-plot(real(receivedsignal),'b')
-hold on
-plot(imag(receivedsignal),'r')
-zoom xon
-legend('real','imag')
-ylabel('$y^{I}(t)$,  $y^{Q}(t)$')
-xlabel('Time in samples')
-set(gca,'fontsize', 15)
-subplot(3,2,6)
-plot([0:length(receivedsignal)-1]/length(receivedsignal)-0.5, abs(fftshift(fft(receivedsignal))))
-ylabel('$|Y^{base}(f)|$')
-xlabel('Frequency in 1/samples')
-set(gca,'fontsize', 15)
+if showplot == 1
+    figure(1)
+    LargeFigure(gcf, 0.15); % Make figure large
+    clf
+    subplot(3,2,1);
+    plot([1:length(p)]/fs,p)
+    ylabel('$p^{transmit}(t)$')
+    set(gca,'fontsize', 15)
+    subplot(3,2,3);
+    plot(real(transmitsignal),'b')
+    hold on
+    plot(imag(transmitsignal),'r')
+    legend('real','imag')
+    ylabel('$x^{I}(t)$,  $x^{Q}(t)$')
+    xlabel('Time in samples')
+    set(gca,'fontsize', 15)
+    subplot(3,2,2);
+    plot([-lenp/2+1:lenp/2]/lenp*fs,20*log10(abs(fftshift(1/sqrt(lenp)*fft(p)))))
+    ylabel('$|P^{transmit}(f)|$')
+    axis([-4*fc 4*fc -40 40])
+    set(gca,'fontsize', 15)
+    subplot(3,2,4);
+    plot([0:length(transmitsignal)-1]/length(transmitsignal)-0.5, abs(fftshift(fft(transmitsignal))))
+    ylabel('$|X^{base}(f)|$')
+    xlabel('Frequency in 1/samples')
+    set(gca,'fontsize', 15)
+    subplot(3,2,5)
+    plot(real(receivedsignal),'b')
+    hold on
+    plot(imag(receivedsignal),'r')
+    zoom xon
+    legend('real','imag')
+    ylabel('$y^{I}(t)$,  $y^{Q}(t)$')
+    xlabel('Time in samples')
+    set(gca,'fontsize', 15)
+    subplot(3,2,6)
+    plot([0:length(receivedsignal)-1]/length(receivedsignal)-0.5, abs(fftshift(fft(receivedsignal))))
+    ylabel('$|Y^{base}(f)|$')
+    xlabel('Frequency in 1/samples')
+    set(gca,'fontsize', 15)
+else
+    close all
+end
+
+
+
 %subplot(4,2,5);
 %stem([1:length(xI_up)],xI_up,'b')
 %hold on

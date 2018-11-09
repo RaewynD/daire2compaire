@@ -52,15 +52,19 @@ timing_sent = timing_I + j*timing_Q;
 timing_sent = reshape(timing_sent, [], 1);
 
 [corr, corr_tau] = xcorr(timing_sent, y_received);
+% plot abs of corr
 [~, offset] = max(abs(corr));
 tau = abs(corr_tau(offset)+1);
+% tau are the actual offsets
+% corr tau = offsets of correlations
 
-y_received = y_received(tau:end);
+y_received_timing = y_received(tau:end);
+%plot out this guy to check things
 
 %% Grab and separate into REAL and IMAGINARY
 
-yI = real(y_received);
-yQ = imag(y_received);
+yI = real(y_received_timing);
+yQ = imag(y_received_timing);
 
 %% Filter low pass signals with matched filter in each arm
 
@@ -68,7 +72,7 @@ yQ = imag(y_received);
 zI = conv(w,yI)*(1/fs);
 zQ = conv(w,yQ)*(1/fs);
 
-%% Sample filtered signal
+%% Sample filtered signal - starts falling apart here
 
 k = 1;
 zIk = [];
@@ -78,6 +82,7 @@ for s = length(w)+1:T_sym/Ts:length(zI)
     zQk(k) = zQ(s);
     k = k+1;
 end
+% Check this loop. Make sure it isn't broken. Try to fix it if it is.
 
 %% Frame Recovery
 
@@ -94,6 +99,7 @@ zQbits = (zQ_bits>0)';
 [~, offset] = max(abs(corr));
 tau = abs(corr_tau(offset)+1);
 pilotI = zIbits(tau:tau+length(fIk));
+%plot abs corr to see what it looks like
 
 len = min([length(fIk) length(fQk)]);
 
@@ -130,7 +136,7 @@ end
 
 zIk_frame = zIk(k:k+len-1);
 zQk_frame = zQk(l:l+len-1);
-
+% These should go with the bitspace stuff
 hoI_hat = (xIk * zIk_frame) / (norm(xIk)^2);
 hoQ_hat = (xQk * zQk_frame) / (norm(xQk)^2);
 

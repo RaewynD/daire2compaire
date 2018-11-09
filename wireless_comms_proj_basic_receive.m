@@ -40,7 +40,7 @@ end
 load global_vars
 %d fs Ts fn Tn T_sym F_sym symLen a p timing pilot msg
 qam = 4;
-D = 1;
+D = 2;
 lenp = length(p);
 
 % Matched filter
@@ -66,15 +66,13 @@ timing_Q = conv(timing_Q, p);
 timing_sent = timing_I + j*timing_Q;
 timing_sent = reshape(timing_sent, [], 1);
 
-[corrr, corrr_tau] = xcorr(timing_sent, y_received);
-% plot abs of corr
-[~, offset] = max(abs(corrr));
-tau = abs(corrr_tau(offset))+1;
+[corr_time, corr_tau] = xcorr(timing_sent, y_received);
+[~, offset] = max(abs(corr_time));
+tau_time = abs(corr_tau(offset))+1;
 % tau are the actual offsets
 % corr tau = offsets of correlations
 
-y_received_timing = y_received(tau:end);
-%plot out this guy to check things
+y_received_timing = y_received(tau_time:end);
 
 %% Grab and separate into REAL and IMAGINARY
 
@@ -102,91 +100,43 @@ end
 % Check this loop. Make sure it isn't broken. Try to fix it if it is.
 
 %% Frame Recovery
+% remove when not doing phase recovery, too
 
-%fIk = pilot(1:2:end);
-%fQk = pilot(2:2:end);
+zk_sign = sign(zk);
+zk_bits = (zk_sign>0);
 
-%zI_bits = sign(zIk); 
-%zQ_bits = sign(zQk);
-%zIbits = (zI_bits>0)';
-%zQbits = (zQ_bits>0)';
-zk_sing = sign(zk);
-zk_bits = (zk_sing>0);
+[corr_frame, corr_tau] = xcorr(pilot, zk_bits);
+[~, offset] = max(abs(corr_frame));
+tau_frame = abs(corr_tau(offset))+1;
 
-[corr, corr_tau] = xcorr(pilot, zk_bits);
-[~, offset] = max(abs(corr));
-tau = abs(corr_tau(offset))+1;
-pilot_eye = zk_bits(tau:tau+length(pilot)-1);
-%plot abs corr to see what it looks like
+msg_start = tau_frame+length(pilot);
 
-len = length(pilot);
+pilot_eye = zk(tau_frame:msg_start-1);
+
+zk_bits = zk_bits(msg_start:end);
+
+[corr_frame_end, corr_tau] = xcorr(pilot, zk_bits);
+[~, offset] = max(abs(corr_frame_end));
+% we actually want the zero position of frame_end
+tau_frame_end = abs(corr_tau(offset));
+
+zk_msg = zk(msg_start:msg_start+tau_frame_end-1);
 
 ho_hat = (pilot * pilot_eye') / (norm(pilot)^2);
-vee_k = zk(tau:end)/ho_hat;
-vee_k = sign(vee_k);
-vee_k = (vee_k>0);
-
-
-%% Find Message
-
-known_bits = [1 1 0 1 0 0 0 1 0 1];
-L = length(known_bits);
-
-xIk = known_bits(1:2:end);
-xQk = known_bits(2:2:end);
-lenn = min([length(xIk) length(xQk)]);
-
-%zI_bits = sign(zIk); 
-%zQ_bits = sign(zQk);
-%zIbits = (zI_bits>0)';
-%zQbits = (zQ_bits>0)';
-
-zaa = length(xIk);
-xIkk = 1:length(zIbits);
-xQkk = 1:length(zIbits);
-
-for zcc = 1:zaa
-    zdd = find(zIbits==xIk(zcc));
-    zee = find(zQbits==xQk(zcc));
-    xIkk = intersect(xIkk,zdd-zcc+1);
-    xQkk = intersect(xQkk,zee-zcc+1);
-end
-
-overlap = ismember(xIkk,xQkk);
-
-bits = 1:(min([length(zIbits) length(zQbits)])*2);
-for x = 1:(min([length(zIbits) length(zQbits)]))
-    bits(x*2-1) = zIbits(x);
-    bits(x*2) = zQbits(x);
-end
-
-%m = strfind(bits, known_bits);
-
-%if (isempty(m))
-%    disp('Not in full bits...')
-%end
-
-zIk_frame = zIk(xIkk:xIkk+lenn-1);
-zQk_frame = zQk(xQkk:xQkk+lenn-1);
-% These should go with the bitspace stuff
-hoI_hat = (xIk * zIk_frame') / (norm(xIk)^2);
-hoQ_hat = (xQk * zQk_frame') / (norm(xQk)^2);
 
 %% Detect bits - One Tap Channel
 
-vIk = zIk_frame / hoI_hat;
-vQk = zQk_frame / hoQ_hat;
+vk = zk_msg / ho_hat;
 
-vk = vIk + j*vQk;
+xk_hat = sign(vk);
+xk_hat = (xk_hat>0);
+xk_hat = reshape(xk_hat,1,length(xk_hat));
 
-xIk_hat = sign(vIk); 
-xQk_hat = sign(vQk);
-bitI_hat = (xIk_hat>0);
-bitQ_hat = (xQk_hat>0);
-bits_hat = reshape([bitI_hat'; bitQ_hat'],1,L)
+vIk = vk(1:2:end);
+vQk = vk(2:2:end);
 
 % Compute Bit error rate (BER)
-BER = mean(bits_hat ~= known_bits);
+BER = mean(xk_hat ~= msg);
 disp(['BER = ' num2str(BER)])
 disp(' ')
 

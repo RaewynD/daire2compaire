@@ -7,11 +7,11 @@
 
 clear
 close all
-clc
+%clc
 
 % Define User Values
 srrc = 0;
-real_time = 1;
+real_time = 0;
 
 if srrc == 1
     load receivedsignal_SRRC
@@ -27,6 +27,9 @@ end
 
 load global_vars
 %d fs Ts fn Tn T_sym F_sym symLen a p timing pilot msg
+qam = 4;
+D = 1;
+lenp = length(p);
 
 % Matched filter
 w = flipud(p);
@@ -89,7 +92,6 @@ end
 fIk = pilot(1:2:end);
 fQk = pilot(2:2:end);
 
-
 zI_bits = sign(zIk); 
 zQ_bits = sign(zQk);
 zIbits = (zI_bits>0)';
@@ -107,20 +109,29 @@ len = min([length(fIk) length(fQk)]);
 %% Find Message
 
 known_bits = [1 1 0 1 0 0 0 1 0 1];
+L = length(known_bits);
 
 xIk = known_bits(1:2:end);
 xQk = known_bits(2:2:end);
-len = min([length(xIk) length(xQk)]);
+lenn = min([length(xIk) length(xQk)]);
 
 %zI_bits = sign(zIk); 
 %zQ_bits = sign(zQk);
 %zIbits = (zI_bits>0)';
 %zQbits = (zQ_bits>0)';
 
-k = strfind(zIbits, xIk);
-l = strfind(zQbits, xQk);
+zaa = length(xIk);
+xIkk = 1:length(zIbits);
+xQkk = 1:length(zIbits);
 
-overlap = ismember(k,l);
+for zcc = 1:zaa
+    zdd = find(zIbits==xIk(zcc));
+    zee = find(zQbits==xQk(zcc));
+    xIkk = intersect(xIkk,zdd-zcc+1);
+    xQkk = intersect(xQkk,zee-zcc+1);
+end
+
+overlap = ismember(xIkk,xQkk);
 
 bits = 1:(min([length(zIbits) length(zQbits)])*2);
 for x = 1:(min([length(zIbits) length(zQbits)]))
@@ -134,11 +145,11 @@ end
 %    disp('Not in full bits...')
 %end
 
-zIk_frame = zIk(k:k+len-1);
-zQk_frame = zQk(l:l+len-1);
+zIk_frame = zIk(xIkk:xIkk+lenn-1);
+zQk_frame = zQk(xQkk:xQkk+lenn-1);
 % These should go with the bitspace stuff
-hoI_hat = (xIk * zIk_frame) / (norm(xIk)^2);
-hoQ_hat = (xQk * zQk_frame) / (norm(xQk)^2);
+hoI_hat = (xIk * zIk_frame') / (norm(xIk)^2);
+hoQ_hat = (xQk * zQk_frame') / (norm(xQk)^2);
 
 %% Detect bits - One Tap Channel
 

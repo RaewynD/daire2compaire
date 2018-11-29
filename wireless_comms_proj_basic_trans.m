@@ -14,27 +14,27 @@ rng('default');
 
 %user defined values
 picture = -1;
-srrc = 0;
-showplot = 0;
+srrc = 2;
+showplot = 1;
 
 % MUST BE EVEN
 global preamble_size;
-preamble_size = 20;
+preamble_size = 25;
 
 d = 1;
 
 fs = 200e6; %sampling
 Ts = 1/fs;
 
-fn = 12.5e6; %nyquist
-Tn = 1/fn;
+fc = 11.25e6; %carrier= 11.25MHz therefore Nyquist is 22.5MHz, which is below the hardware limit
+Tc = 1/fc;
 
-T_sym = 100*Tn; %sec / symbol
+T_sym = 1e-6; %100*Tn; %sec / symbol
 F_sym = 1/T_sym;
 
 symLen = T_sym * fs; %samples per symbol
 
-a = 0.2;
+a = 0.2; %sigma
 
 % Use sqrt-raised cosine filter form 
 % ww=FIRRCOS(N,Fc,R,Fs,'rolloff',TYPE) as p^b(t)
@@ -53,6 +53,9 @@ end
 % should be same as symLen
 lenp = length(p);
 
+%figure(1)
+%plot([1:lenp]/fs,p)
+
 %% Define binary transmission
 freq = get_bits(0);
 timing = get_bits(1);
@@ -62,7 +65,7 @@ msg = get_bits(picture);
 if mod(length(msg), 2) ~= 0
     msg = [msg, 0];
 end
-
+%frequency sync, timing sync, pilot, msg, pilot
 x1 = [freq, timing, pilot, msg, pilot];
 
 % make 1 and -1
@@ -87,64 +90,63 @@ transmitsignal = reshape(transmitsignal, [], 1);
 save('transmitsignal.mat','transmitsignal')
 
 % save for analysis in receive
-save global_vars.mat d fs Ts fn Tn T_sym F_sym symLen a p timing pilot msg
+save global_vars.mat d fs Ts fc Tc T_sym F_sym symLen a p timing pilot msg
 
 if srrc == 1
     save('transmitsignal_SRRC.mat','transmitsignal')
-else
+elseif srrc == 0
     save('transmitsignal_RECT.mat','transmitsignal')
+else
 end
 
 %% Plot time and frequency domain signals
+load receivedsignal.mat
+
+ax = []; %Axes connections
 
 if srrc == 1
     load receivedsignal_SRRC
     load transmitsignal_SRRC
-else
+elseif srrc == 0
     load receivedsignal_RECT
     load transmitsignal_RECT
+else
 end
 
 if showplot == 1
     figure(1)
     LargeFigure(gcf, 0.15); % Make figure large
     clf
-    subplot(3,2,1);
+    subplot(2,2,1);
     plot([1:length(p)]/fs,p)
     ylabel('$p^{transmit}(t)$')
+    xlabel('Time (s)')
+    title('Pulse Signal')
     set(gca,'fontsize', 15)
-    subplot(3,2,3);
+    ax(1) = subplot(2,2,3);
     plot(real(transmitsignal),'b')
     hold on
     plot(imag(transmitsignal),'r')
     legend('real','imag')
     ylabel('$x^{I}(t)$,  $x^{Q}(t)$')
     xlabel('Time in samples')
+    title('Transmitted Signal')
     set(gca,'fontsize', 15)
-    subplot(3,2,2);
+    subplot(2,2,2);
     plot([-lenp/2+1:lenp/2]/lenp*fs,20*log10(abs(fftshift(1/sqrt(lenp)*fft(p)))))
     ylabel('$|P^{transmit}(f)|$')
-    axis([-4*fc 4*fc -40 40])
+    xlabel('Frequency')
+    title('Frequency Response of Pulse')
+    %axis([-4*fc 4*fc -40 40])
     set(gca,'fontsize', 15)
-    subplot(3,2,4);
+    ax(2) = subplot(2,2,4);
     plot([0:length(transmitsignal)-1]/length(transmitsignal)-0.5, abs(fftshift(fft(transmitsignal))))
     ylabel('$|X^{base}(f)|$')
     xlabel('Frequency in 1/samples')
+    title('Frequency Response of Transmitted Signal')
     set(gca,'fontsize', 15)
-    subplot(3,2,5)
-    plot(real(receivedsignal),'b')
-    hold on
-    plot(imag(receivedsignal),'r')
-    zoom xon
-    legend('real','imag')
-    ylabel('$y^{I}(t)$,  $y^{Q}(t)$')
-    xlabel('Time in samples')
-    set(gca,'fontsize', 15)
-    subplot(3,2,6)
-    plot([0:length(receivedsignal)-1]/length(receivedsignal)-0.5, abs(fftshift(fft(receivedsignal))))
-    ylabel('$|Y^{base}(f)|$')
-    xlabel('Frequency in 1/samples')
-    set(gca,'fontsize', 15)
+    %linkaxes(ax,'x')
+    zoom on
 else
     close all
 end
@@ -160,7 +162,7 @@ end
 %set(gca,'fontsize', 15)
 %zoom xon
 
-close all
+%close all
 
 %% ---Helper Functions--- %%
 
@@ -171,9 +173,9 @@ function bits = get_bits(pic)
 
     switch pic
         case 0
-            bits = ones(1,preamble_size);
+            bits = ones(1,100);
         case 1
-            bits = randi([0 1],1,preamble_size);
+            bits = randi([0 1],1,20);
         case 10
             bits = [1 1 0 1 0 0 0 1 0 1];
         case 88

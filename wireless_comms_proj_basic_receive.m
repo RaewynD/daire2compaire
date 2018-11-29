@@ -6,31 +6,34 @@
 %% --Main Receive Code-- %%
 
 clear
-close all
+%close all
 %clc
 rng('default');
 
 % Define User Values
-srrc = 0;
-real_time = 1;
+srrc = 2;
+real_time = 0;
 AWGN = 1;
+
+load transmitsignal.mat
 
 if srrc == 1
     load receivedsignal_SRRC
     load transmitsignal_SRRC
-else
+elseif srrc == 0
     load receivedsignal_RECT
     load transmitsignal_RECT
+else
 end
 
 if real_time == 1
-    load receivedsignal
+    load receivedsignal.mat
 end
 
 if AWGN == 1
     M = 4; % M-QAM
     d = 1; % Minimum distance 
-    SNR_mfb_dB = 4; % SNR_MFB in dB.  
+    SNR_mfb_dB = 10; % SNR_MFB in dB.  
     E_x = d^2/(6*(M-1)); % Calculate the Symbol Energy
     SNR_mfb_dB = 10^(SNR_mfb_dB/10); % Calculate the SNR
     sigma = sqrt(E_x/SNR_mfb_dB); % Calculate the STD Dev
@@ -40,8 +43,9 @@ end
 load global_vars
 %d fs Ts fn Tn T_sym F_sym symLen a p timing pilot msg
 qam = 4;
-D = 2;
+D = 1;
 lenp = length(p);
+L = length(msg);
 
 % Matched filter
 w = flipud(p);
@@ -99,6 +103,11 @@ for s = length(w)+1:T_sym/Ts:length(zI)
 end
 % Check this loop. Make sure it isn't broken. Try to fix it if it is.
 
+xk_should = zk(41:50);
+
+xkI_should = xk_should(1:2:end);
+xkQ_should = xk_should(2:2:end);
+
 %% Frame Recovery
 % remove when not doing phase recovery, too
 
@@ -126,6 +135,8 @@ ho_hat = (pilot * pilot_eye') / (norm(pilot)^2);
 
 %% Detect bits - One Tap Channel
 
+zk_msg = zk(41:50);
+
 vk = zk_msg / ho_hat;
 
 xk_hat = sign(vk);
@@ -135,14 +146,16 @@ xk_hat = reshape(xk_hat,1,length(xk_hat));
 vIk = vk(1:2:end);
 vQk = vk(2:2:end);
 
+v_k = vIk + j*vQk;
+
 % Compute Bit error rate (BER)
-BER = mean(xk_hat ~= msg);
+BER = mean(xk_should ~= msg);
 disp(['BER = ' num2str(BER)])
 disp(' ')
 
 %% Define Constellation
 qam_range = 1:sqrt(qam);
-qam_range = D*qam_range - 0.5*D - sqrt(qam)/2;
+qam_range = d*qam_range - 0.5*d - sqrt(qam)/2;
 constellation = [];
  
 for xi = qam_range
@@ -151,30 +164,15 @@ for xi = qam_range
     end
 end
 
-% Part C - make decision
-%x_hat = zeros(L,1);
-
-%P_error = 0;
-%for x_count = 1:L
-%    [min_dist, index] = min(abs(constellation - x_received(x_count)));
-%    x_hat(x_count) = constellation(index);
-%    if(x_hat(x_count) ~= x_transmitted(x_count))
-%        P_error = P_error + 1;
-%    end
-%end
-
-% Calculate and print error performance
-%Pe = P_error / L;
-%fprintf('Symbols wrong: %f Symbol error rate Pe = %f\n',P_error, Pe)
 
 if graph == 1
     constellationmarkersize = 6;
     ax = [];
     cats = 0;
-    lono = 1:x;
+    lono = 1:length(zk_sign);
 
-    close all
-    figure(1)
+    %close all
+    figure(1) %Constellation Plot Mayne
     LargeFigure(gcf, 0.15); % Make figure large
     clf
     zoom off
@@ -182,7 +180,7 @@ if graph == 1
     set(gca,'DataAspectRatio',[1 1 1])
     grid on
     hold on
-    D = max(D, max(abs(vk))+1);
+    D = max(D, max(abs(v_k))+1);
     axis([-D D -D D])
     plot([-D:D/100:D],zeros(size([-D:D/100:D])),'k','LineWidth',2)
     plot(zeros(size([-D:D/100:D])),[-D:D/100:D],'k','LineWidth',2)
@@ -193,7 +191,7 @@ if graph == 1
     title('Constellation Plot')
     plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
     for ii=1:L/2
-        plot(vk(ii),'bx')
+        plot(v_k(ii),'bx')
         plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
         if (rem(ii,100)==0)
             pause(.00002)
@@ -206,16 +204,16 @@ if graph == 1
     LargeFigure(gcf, 0.15); % Make figure large
     clf
     subplot(3,2,1);
-    plot([1:length(p)]/fs,p)
+    plot([1:lenp]/fs,p)
     ylabel('$p^{transmit}(t)$')
     title('Pulse Signal p(t)')
     set(gca,'fontsize', 15)
     subplot(3,2,3);
-    plot(real(transmitsignal),'b')
+    plot(real(x_transmitted),'b')
     hold on
-    plot(imag(transmitsignal),'r')
+    plot(imag(x_transmitted),'r')
     legend('real','imag')
-    ylabel('$x^{I}(t),    x^{Q}(t)$')
+    ylabel('$x^{I}(t)$, $x^{Q}(t)$')
     xlabel('Time in samples')
     title('Transmit Signal')
     set(gca,'fontsize', 15)
@@ -223,7 +221,7 @@ if graph == 1
     plot([-lenp/2+1:lenp/2]/lenp*fs,20*log10(abs(fftshift(1/sqrt(lenp)*fft(p)))))
     ylabel('$|P^{transmit}(f)|$')
     title('Pulse Signal in Frequency Domain')
-    axis([-4*fc 4*fc -40 40])
+    %axis([-4*fn 4*fn -40 40])
     set(gca,'fontsize', 15)
     subplot(3,2,4);
     plot([0:length(transmitsignal)-1]/length(transmitsignal)-0.5, abs(fftshift(fft(transmitsignal))))
@@ -232,9 +230,9 @@ if graph == 1
     title('Transimt Signal in Frequency Domain')
     set(gca,'fontsize', 15)
     subplot(3,2,5)
-    plot(real(receivedsignal),'b')
+    plot(real(y_received),'b')
     hold on
-    plot(imag(receivedsignal),'r')
+    plot(imag(y_received),'r')
     zoom xon
     legend('real','imag')
     ylabel('$y^{I}(t)$,  $y^{Q}(t)$')
@@ -248,56 +246,137 @@ if graph == 1
     title('Received Signal in Frequency Domain')
     set(gca,'fontsize', 15)
     
-    figure(3)
+    figure(3) %Timing recovery
+    LargeFigure(gcf, 0.15); % Make figure large
+    clf
+    subplot(2,2,1);
+    plot(corr_time)
+    ylabel('$y^{base}(t)$')
+    title('Time Correlation')
+    set(gca,'fontsize', 15)
+    subplot(2,2,2);
+    plot(abs(corr_time))
+    ylabel('$y^{base}(t)$')
+    title('Absolute Value of the Time Correlation')
+    set(gca,'fontsize', 15)
+    subplot(2,2,3);
+    plot(y_received_timing)
+    ylabel('$y^Q(t)$')
+    xlabel('$y^I(t)$')
+    title('$y(t)$ Time Recovered')
+    set(gca,'fontsize', 15)
+    subplot(2,2,4);
+    plot(real(y_received_timing),'b')
+    hold on;
+    plot(imag(y_received_timing),'r')
+    zoom xon
+    legend('real','imag')
+    ylabel('Received Signal')
+    xlabel('Time in samples')
+    title('$y(t)$ Time Recovered Signal')
+    set(gca,'fontsize', 15)
+    
+    figure(4) %Frame recovery
+    LargeFigure(gcf, 0.15); % Make figure large
+    clf
+    subplot(3,2,1);
+    plot(corr_frame)
+    ylabel('$z_k$')
+    title('Frame Correlation Start')
+    set(gca,'fontsize', 15)
+    subplot(3,2,2);
+    plot(abs(corr_frame))
+    ylabel('$z_k$')
+    title('Absolute Value of the Frame Correlation Start')
+    set(gca,'fontsize', 15)
+    subplot(3,2,3);
+    plot(corr_frame_end)
+    ylabel('$z_k$')
+    title('Frame Correlation End')
+    set(gca,'fontsize', 15)
+    subplot(3,2,4);
+    plot(abs(corr_frame_end))
+    ylabel('$z_k$')
+    title('Absolute Value of the Frame Correlation End')
+    set(gca,'fontsize', 15)
+    subplot(3,2,5);
+    stem(zk_bits)
+    ylabel('$z_k$')
+    title('Recovered $z_k$ Bits')
+    set(gca,'fontsize', 15)
+    subplot(3,2,6);
+    stem(zk_msg)
+    ylabel('$z_k$')
+    title('Frame Correlation End - Found message')
+    set(gca,'fontsize', 15)
+    
+    figure(5) % Bit Stems Plots
     LargeFigure(gcf, 0.15); % Make figure large
     clf
     ax(1) = subplot(2,2,1);
     %stem([1:x],bitI_hat,'b')
-    hold on
-    stem(lono,zI_bits,'r')
-    for zee = 1:length(zIk_frame)
-        cat = find(zIk==zIk_frame(zee));
-        stem(lono(cat),zI_bits(cat),'b')
-    end
-    ylabel('$z^I_{k}$') %'$x^I_k,   z^I_{k}$'
-    xlabel('discrete time  $k$  (sampled at $t=kT$)')
-    title('Sampler Output $z^I_{k}$')
+    %hold on
+    stem(1:length(pilot),pilot,'b')
+    %for zee = 1:length(zIk_frame)
+    %    cat = find(zIk==zIk_frame(zee));
+    %    stem(lono(cat),zI_bits(cat),'b')
+    %end
+    ylabel('Bits') %'$x^I_k,   z^I_{k}$'
+    xlabel('discrete time')
+    title('Pilot Signal')
     ylim([-2 2]);
     set(gca,'fontsize', 15)
     ax(2) = subplot(2,2,2);
-    %stem([1:x],bitQ_hat,'b')
-    hold on
-    stem(lono,zQ_bits,'b')
-    for zee = 1:length(zQk_frame)
-        cat = find(zQk==zQk_frame(zee));
-        stem(lono(cat),zQ_bits(cat),'r')
-    end
-    ylabel('$z^Q_{k}$') %'$x^Q_k,   z^Q_{k}$'
+    %stem([1:x],bitI_hat,'b')
+    %hold on
+    stem(lono,zk_sign,'r')
+    %for zee = 1:length(zIk_frame)
+    %    cat = find(zIk==zIk_frame(zee));
+    %    stem(lono(cat),zI_bits(cat),'b')
+    %end
+    ylabel('$z_{k}$') %'$x^I_k,   z^I_{k}$'
     xlabel('discrete time  $k$  (sampled at $t=kT$)')
-    title('Sampler Output $z^Q_{k}$')
+    title('Sampler Output $z_{k}$')
     ylim([-2 2]);
     set(gca,'fontsize', 15)
+    %ax(2) = subplot(2,2,2);
+    %stem([1:x],bitQ_hat,'b')
+    %hold on
+    %stem(lono,zQ_bits,'b')
+    %for zee = 1:length(zQk_frame)
+    %    cat = find(zQk==zQk_frame(zee));
+    %    stem(lono(cat),zQ_bits(cat),'r')
+    %end
+    %ylabel('$z^Q_{k}$') %'$x^Q_k,   z^Q_{k}$'
+    %xlabel('discrete time  $k$  (sampled at $t=kT$)')
+    %title('Sampler Output $z^Q_{k}$')
+    %ylim([-2 2]);
+    %set(gca,'fontsize', 15)
     subplot(2,2,3);
-    stem([1:len],xIk_hat','b')
+    stem(1:length(vk),vk,'b')
     hold on
-    stem([1:len],xQk_hat','r')
-    ylabel('$v^I_{k}, v^Q_{k}$') %'$v^I_k,   v^I_{k}$'
+    ylabel('$v_{k}$') 
     xlabel('discrete time  $k$  (sampled at $t=kT$)')
     title('Equalizer $v_{k}$ output samples')
     set(gca,'fontsize', 15)
     ylim([-2 2]);
-    subplot(2,2,4);
+    %subplot(2,2,4);
     %stem([1:x],bitQ_hat,'b')
     %hold on
-    stem([1:L],bits_hat','k')
-    ylabel('$z_{k}$') %'$x^Q_k,   z^Q_{k}$'
-    xlabel('discrete time  $k$  (sampled at $t=kT$)')
-    title('Decoded Bits $z_{k}$')
-    ylim([-2 2]);
-    set(gca,'fontsize', 15)
-    linkaxes(ax,'x')
-    zoom xon
+    %stem([1:L],bits_hat','k')
+    %ylabel('$z_{k}$') %'$x^Q_k,   z^Q_{k}$'
+    %xlabel('discrete time  $k$  (sampled at $t=kT$)')
+    %title('Decoded Bits $z_{k}$')
+    %ylim([-2 2]);
+    %set(gca,'fontsize', 15)
+    %linkaxes(ax,'x')
+    %zoom xon
 
+    %figure(6)
+    %scatter(vIk, vQk);
+    %grid on;
+    
+    
 end
 
 

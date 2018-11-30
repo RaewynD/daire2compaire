@@ -12,8 +12,8 @@ rng('default');
 
 % Define User Values
 srrc = 2;
-real_time = 0;
-AWGN = 1;
+real_time = 1;
+AWGN = 0;
 
 load transmitsignal.mat
 
@@ -54,6 +54,13 @@ y_received = receivedsignal;
 x_transmitted = transmitsignal;
 
 graph = 1;
+
+%% Greeting to the user
+disp(' ')
+disp('Hello. Thanks for running this program. I will try to find your message now')
+disp(' ')
+disp(['I am searching for Pilot signal: ' num2str(pilot)])
+disp(' ')
 
 %% Apply Timing Recovery
 
@@ -113,28 +120,61 @@ end
 zk_sign = sign(zk);
 zk_bits = (zk_sign>0);
 
-%It's finding the wrong one (There are two pilots, but a lock on second)
-[corr_frame, corr_tau_frame] = xcorr(pilot, zk_bits); %locking in on the wrong one
-[~, offset_frame] = max(abs(corr_frame)); %locking in on the wrong one
-tau_frame = abs(corr_tau_frame(offset_frame))+1;
+if AWGN == 1
 
-msg_start = tau_frame-(length(pilot)/2); %Pushes to be +length(pilot) beyond msg???
+    [corr_frame, corr_tau_frame] = xcorr(pilot, zk_bits); %locking in on the frame
+    [~, offset_frame] = max(abs(corr_frame)); %locked
+    tau_frame = abs(corr_tau_frame(offset_frame))+1;
+    
+    msg_start = tau_frame-(length(pilot)/2); %Pushes to be at start of message
+    
+    pilot_start = tau_frame-(3*length(pilot)/2); %Aligns to Pilot start
+    
+    msg_eye = zk(msg_start:tau_frame-1); %Message found and located
+    
+    pilot_eye = zk(pilot_start:tau_frame-(length(pilot)/2)-1); %Should line-up to pilot end before msg
+    
+    zk_bits2 = zk_bits(msg_start:end);
+    
+    [corr_frame_end, corr_tau_frame_end] = xcorr(pilot, zk_bits2);
+    [~, offset_end] = max(abs(corr_frame_end));
+    tau_frame_end = abs(corr_tau_frame_end(offset_end)); %Determines end of msg
+    
+    zk_msg = zk(msg_start:msg_start+tau_frame_end-1); %comes out to zk(41:50)
+    
+    ho_hat = (pilot * pilot_eye') / (norm(pilot)^2);
 
-pilot_start = tau_frame-(3*length(pilot)/2); %Aligns to Pilot start
+else 
+    [corr_frame, corr_tau_frame] = xcorr(pilot, zk_bits); %locking in on frame for pilot end
+    
+    [steve, offset_frame] = max(abs(corr_frame)); %Searching for max value
+    [nick, offset_frame2] = max(abs(corr_frame(1:offset_frame-1))); %Searching for a potentially earlier max value
+    
+    if abs(int8(nick))==abs(steve) %Checking to see if there is a max earlier than what it's returning
+        offset_frame = offset_frame2;
+    end
+    
+    tau_frame = abs(corr_tau_frame(offset_frame))+1;
+    
+    msg_start = tau_frame-(length(pilot)/2); %Pushes to be at start of message
+    
+    pilot_start = tau_frame-(3*length(pilot)/2); %Aligns to Pilot start
+    
+    msg_eye = zk(msg_start:tau_frame-1); %Message found and located
+    
+    pilot_eye = zk(pilot_start:tau_frame-(length(pilot)/2)-1); %Should line-up to pilot end before msg
+    
+    zk_bits2 = zk_bits(msg_start:end);
+    
+    [corr_frame_end, corr_tau_frame_end] = xcorr(pilot, zk_bits2);
+    [~, offset_end] = max(abs(corr_frame_end));
+    tau_frame_end = abs(corr_tau_frame_end(offset_end)); %Determines end of msg
+    
+    zk_msg = zk(msg_start:msg_start+tau_frame_end-1); %comes out to zk(41:50)
+    
+    ho_hat = (pilot * pilot_eye') / (norm(pilot)^2);
 
-msg_eye = zk(msg_start:tau_frame-1); %Message found and located
-
-pilot_eye = zk(pilot_start:tau_frame-(length(pilot)/2)-1); %Should line-up to pilot end before msg
-
-zk_bits2 = zk_bits(msg_start:end);
-
-[corr_frame_end, corr_tau_frame_end] = xcorr(pilot, zk_bits2);
-[~, offset_end] = max(abs(corr_frame_end));
-tau_frame_end = abs(corr_tau_frame_end(offset_end)); %Determines end of msg
-
-zk_msg = zk(msg_start:msg_start+tau_frame_end-1); %comes out to zk(41:50)
-
-ho_hat = (pilot * pilot_eye') / (norm(pilot)^2);
+end
 
 %% Detect bits - One Tap Channel
 
@@ -151,10 +191,23 @@ vQk = vk(2:2:end);
 
 v_k = vIk + j*vQk;
 
+%% Additional chat with user
+pause(1);
+disp(' ')
+disp('Thanks for waiting. Here is what I have.')
+disp(' ')
+disp(['Was this your message?: ' num2str(xk_hat)])
+%disp(' ')
+
 % Compute Bit error rate (BER)
 BER = mean(xk_hat ~= msg);
-disp(['BER = ' num2str(BER)])
 disp(' ')
+disp(['Your BER is: ' num2str(BER)])
+disp(' ')
+
+%Maybe figure out how to write the text outputs onto the graph?
+%Also figure out how to graph the locations of the pilots and messages in
+%the large zk graph
 
 %% Define Constellation
 qam_range = 1:sqrt(qam);

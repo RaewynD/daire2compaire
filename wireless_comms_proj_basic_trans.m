@@ -8,7 +8,7 @@
 
 clear
 close all
-clc
+%clc
 % Set seed for random number generator (for repeatability of simulation)
 rng('default');
 
@@ -29,7 +29,7 @@ Ts = 1/fs;
 fc = 11.25e6; %carrier= 11.25MHz therefore Nyquist is 22.5MHz, which is below the hardware limit
 Tc = 1/fc;
 
-T_sym = 1e-6; %100*Tn; %sec / symbol
+T_sym = 0.5e-6; %100*Tn; %sec / symbol
 F_sym = 1/T_sym;
 
 symLen = T_sym * fs; %samples per symbol
@@ -44,9 +44,9 @@ if srrc == 1
     p = p/norm(p)/sqrt(1/fs);
 % Use rectangular pulse as filter
 else
-    p = [zeros(ceil(symLen/4),1);
-         ones(ceil(symLen/2),1);
-         zeros(ceil(symLen/4),1)];
+    p = [zeros(ceil(symLen/8),1);
+         ones(ceil(symLen/4),1);
+         zeros(ceil(symLen/8),1)];
     p = p/norm(p)/sqrt(1/fs);
 end
 
@@ -137,7 +137,7 @@ if showplot == 1
     ylabel('$|P^{transmit}(f)|$')
     xlabel('Frequency')
     title('Frequency Response of Pulse')
-    %axis([-4*fc 4*fc -40 40])
+    axis([-4*fc 4*fc -Inf Inf])
     set(gca,'fontsize', 15)
     ax(2) = subplot(2,2,4);
     plot([0:length(transmitsignal)-1]/length(transmitsignal)-0.5, abs(fftshift(fft(transmitsignal))))

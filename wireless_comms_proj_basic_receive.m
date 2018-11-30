@@ -53,7 +53,7 @@ w = flipud(p);
 y_received = receivedsignal;
 x_transmitted = transmitsignal;
 
-graph = 0;
+graph = 1;
 
 %% Apply Timing Recovery
 
@@ -102,10 +102,10 @@ for s = length(w)+1:T_sym/Ts:length(zI)
     k = k+1;
 end
 
-xk_should = zk(41:50);
+%xk_should = zk(41:50);
 
-xkI_should = xk_should(1:2:end);
-xkQ_should = xk_should(2:2:end);
+%xkI_should = xk_should(1:2:end);
+%xkQ_should = xk_should(2:2:end);
 
 %% Frame Recovery
 % remove when not doing phase recovery, too
@@ -118,24 +118,27 @@ zk_bits = (zk_sign>0);
 [~, offset_frame] = max(abs(corr_frame)); %locking in on the wrong one
 tau_frame = abs(corr_tau_frame(offset_frame))+1;
 
-msg_start = tau_frame+length(pilot); %Pushes to be +length(pilot) beyond msg???
+msg_start = tau_frame-(length(pilot)/2); %Pushes to be +length(pilot) beyond msg???
 
-pilot_eye = zk(tau_frame:msg_start-1); %Pilot found within zk (But it's the second pilot)
+pilot_start = tau_frame-(3*length(pilot)/2); %Aligns to Pilot start
+
+msg_eye = zk(msg_start:tau_frame-1); %Message found and located
+
+pilot_eye = zk(pilot_start:tau_frame-(length(pilot)/2)-1); %Should line-up to pilot end before msg
 
 zk_bits2 = zk_bits(msg_start:end);
 
 [corr_frame_end, corr_tau_frame_end] = xcorr(pilot, zk_bits2);
-[~, offset] = max(abs(corr_frame_end));
-% we actually want the zero position of frame_end
-tau_frame_end = abs(corr_tau_frame_end(offset));
+[~, offset_end] = max(abs(corr_frame_end));
+tau_frame_end = abs(corr_tau_frame_end(offset_end)); %Determines end of msg
 
-zk_msg = zk(msg_start:msg_start+tau_frame_end-1);
+zk_msg = zk(msg_start:msg_start+tau_frame_end-1); %comes out to zk(41:50)
 
 ho_hat = (pilot * pilot_eye') / (norm(pilot)^2);
 
 %% Detect bits - One Tap Channel
 
-zk_msg = zk(41:50);
+%zk_msg = zk(41:50);
 
 vk = zk_msg / ho_hat;
 
@@ -149,7 +152,7 @@ vQk = vk(2:2:end);
 v_k = vIk + j*vQk;
 
 % Compute Bit error rate (BER)
-BER = mean(xk_should ~= msg);
+BER = mean(xk_hat ~= msg);
 disp(['BER = ' num2str(BER)])
 disp(' ')
 

@@ -160,7 +160,7 @@ else
     
     pilot_start = tau_frame-(3*length(pilot)/2); %Aligns to Pilot start
     
-    msg_eye = zk(msg_start:tau_frame-1); %Message found and located
+    msg_eye = zk(msg_start:tau_frame-1); %Message found and located?
     
     pilot_eye = zk(pilot_start:tau_frame-(length(pilot)/2)-1); %Should line-up to pilot end before msg
     
@@ -316,7 +316,8 @@ if graph == 1
     title('Absolute Value of the Time Correlation')
     set(gca,'fontsize', 15)
     subplot(2,2,3);
-    plot(y_received_timing)
+    %plot(y_received_timing)
+    scatter(real(y_received_timing),imag(y_received_timing))
     ylabel('$y^Q(t)$')
     xlabel('$y^I(t)$')
     title('$y(t)$ Time Recovered')
@@ -409,7 +410,7 @@ if graph == 1
     %ylim([-2 2]);
     %set(gca,'fontsize', 15)
     subplot(2,2,3);
-    stem(1:length(vk),vk,'b')
+    stem(1:length(xk_hat),xk_hat,'b')
     hold on
     ylabel('$v_{k}$') 
     xlabel('discrete time  $k$  (sampled at $t=kT$)')

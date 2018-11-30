@@ -29,7 +29,7 @@ Ts = 1/fs;
 fc = 11.25e6; %carrier= 11.25MHz therefore Nyquist is 22.5MHz, which is below the hardware limit
 Tc = 1/fc;
 
-T_sym = 0.5e-6; %100*Tn; %sec / symbol
+T_sym = 2e-6; %100*Tn; %sec / symbol
 F_sym = 1/T_sym;
 
 symLen = T_sym * fs; %samples per symbol
@@ -160,7 +160,7 @@ function bits = get_bits(pic)
 
     switch pic
         case 0
-            bits = ones(1,130);
+            bits = ones(1,330);
         case 1
             bits = randi([0 1],1,20);
         case 10

@@ -18,8 +18,8 @@ srrc = 2;
 showplot = 1;
 
 % MUST BE EVEN
-global preamble_size;
-preamble_size = 25;
+%global preamble_size;
+%preamble_size = 25;
 
 d = 1;
 
@@ -151,29 +151,16 @@ else
     close all
 end
 
-
-
-%subplot(4,2,5);
-%stem([1:length(xI_up)],xI_up,'b')
-%hold on
-%stem([1:length(xI_up)],xQ_up,'r')
-%ylabel('$x^I_k,   x^Q_{k}$')
-%xlabel('DT transmisison $k$  (sampled at $t=kT$) [before convolution with p(t)]')
-%set(gca,'fontsize', 15)
-%zoom xon
-
-%close all
-
 %% ---Helper Functions--- %%
 
 % get bit array from picture to transmit
 function bits = get_bits(pic)
 
-    global preamble_size;
+    %global preamble_size;
 
     switch pic
         case 0
-            bits = ones(1,100);
+            bits = ones(1,130);
         case 1
             bits = randi([0 1],1,20);
         case 10

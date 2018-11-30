@@ -41,7 +41,7 @@ if AWGN == 1
 end
 
 load global_vars
-%d fs Ts fn Tn T_sym F_sym symLen a p timing pilot msg
+%d fs Ts fc Tc T_sym F_sym symLen a p timing pilot msg
 qam = 4;
 D = 1;
 lenp = length(p);
@@ -53,7 +53,7 @@ w = flipud(p);
 y_received = receivedsignal;
 x_transmitted = transmitsignal;
 
-graph = 1;
+graph = 0;
 
 %% Apply Timing Recovery
 
@@ -70,9 +70,9 @@ timing_Q = conv(timing_Q, p);
 timing_sent = timing_I + j*timing_Q;
 timing_sent = reshape(timing_sent, [], 1);
 
-[corr_time, corr_tau] = xcorr(timing_sent, y_received);
-[~, offset] = max(abs(corr_time));
-tau_time = abs(corr_tau(offset))+1;
+[corr_time, corr_tau_time] = xcorr(timing_sent, y_received);
+[~, offset_time] = max(abs(corr_time));
+tau_time = abs(corr_tau_time(offset_time))+1;
 % tau are the actual offsets
 % corr tau = offsets of correlations
 
@@ -92,16 +92,15 @@ zQ = conv(w,yQ)*(1/fs);
 %% Sample filtered signal - starts falling apart here
 
 k = 1;
-zIk = [];
-zQk = [];
+%zIk = [];
+%zQk = [];
 for s = length(w)+1:T_sym/Ts:length(zI)
     zk(k*2-1) = zI(s); %odds
     zk(k*2) = zQ(s); %evens
-    zIk(k) = zI(s);
-    zQk(k) = zQ(s);
+%    zIk(k) = zI(s);
+%    zQk(k) = zQ(s);
     k = k+1;
 end
-% Check this loop. Make sure it isn't broken. Try to fix it if it is.
 
 xk_should = zk(41:50);
 
@@ -114,20 +113,21 @@ xkQ_should = xk_should(2:2:end);
 zk_sign = sign(zk);
 zk_bits = (zk_sign>0);
 
-[corr_frame, corr_tau] = xcorr(pilot, zk_bits);
-[~, offset] = max(abs(corr_frame));
-tau_frame = abs(corr_tau(offset))+1;
+%It's finding the wrong one (There are two pilots, but a lock on second)
+[corr_frame, corr_tau_frame] = xcorr(pilot, zk_bits); %locking in on the wrong one
+[~, offset_frame] = max(abs(corr_frame)); %locking in on the wrong one
+tau_frame = abs(corr_tau_frame(offset_frame))+1;
 
-msg_start = tau_frame+length(pilot);
+msg_start = tau_frame+length(pilot); %Pushes to be +length(pilot) beyond msg???
 
-pilot_eye = zk(tau_frame:msg_start-1);
+pilot_eye = zk(tau_frame:msg_start-1); %Pilot found within zk (But it's the second pilot)
 
-zk_bits = zk_bits(msg_start:end);
+zk_bits2 = zk_bits(msg_start:end);
 
-[corr_frame_end, corr_tau] = xcorr(pilot, zk_bits);
+[corr_frame_end, corr_tau_frame_end] = xcorr(pilot, zk_bits2);
 [~, offset] = max(abs(corr_frame_end));
 % we actually want the zero position of frame_end
-tau_frame_end = abs(corr_tau(offset));
+tau_frame_end = abs(corr_tau_frame_end(offset));
 
 zk_msg = zk(msg_start:msg_start+tau_frame_end-1);
 
@@ -221,7 +221,7 @@ if graph == 1
     plot([-lenp/2+1:lenp/2]/lenp*fs,20*log10(abs(fftshift(1/sqrt(lenp)*fft(p)))))
     ylabel('$|P^{transmit}(f)|$')
     title('Pulse Signal in Frequency Domain')
-    %axis([-4*fn 4*fn -40 40])
+    %axis([-4*fc 4*fc -40 40])
     set(gca,'fontsize', 15)
     subplot(3,2,4);
     plot([0:length(transmitsignal)-1]/length(transmitsignal)-0.5, abs(fftshift(fft(transmitsignal))))

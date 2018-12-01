@@ -12,15 +12,16 @@ clear
 % Set seed for random number generator (for repeatability of simulation)
 rng('default');
 
+global freq_preamble timing_preamble pilot_size
+
 %user defined values
 picture = 13720;
 srrc = 1;
 showplot = 1;
-
-global preamble_size num_pilots num_message;
-preamble_size = 100; % MUST BE EVEN (Frequency Preamble)
-num_pilots = 11; % MUST BE ODD (Number of pilot messages)
-num_message = num_pilots-1;
+freq_preamble = 300;
+timing_preamble = 50;
+pilot_size = 20;
+msg_size = 150;
 
 d = 1;
 
@@ -35,10 +36,14 @@ F_sym = 1/T_sym;
 
 symLen = T_sym * fs; %samples per symbol
 
-N = 10; %length of filter in symbol periods
+N = 10; %length of filter in symbol periods (0-24
 Ns = T_sym*N*fs; %Number of filter samples
 
 a = 0.2; %sigma
+
+time = 800e-6;
+bits_per_sym = 2;
+transmit_size = (time / T_sym) * bits_per_sym;
 
 
 %% Establish Filter
@@ -67,37 +72,44 @@ lenp = length(p);
 %% Define binary transmission
 freq = get_bits(0);
 timing = get_bits(1);
-pilot = get_bits(1);
+pilot = get_bits(2);
 msg = get_bits(picture);
+len = length(msg);
 
-msg_place = length(msg)/num_message;
+% make sure msg is factor of message_size
+to_add = zeros(1,mod(len, msg_size));
+msg = [msg,to_add];
 
-x1 = [freq, timing, pilot, msg(1:msg_place);
-    pilot, msg_place((msg_place)+1:msg_place*2);
-    pilot, msg_place((msg_place*2)+1:msg_place*3);
-    pilot, msg_place((msg_place*3)+1:msg_place*4);
-    pilot, msg_place((msg_place*4)+1:msg_place*5);
-    pilot, msg_place((msg_place*5)+1:msg_place*6);
-    pilot, msg_place((msg_place*6)+1:msg_place*7);
-    pilot, msg_place((msg_place*7)+1:msg_place*8);
-    pilot, msg_place((msg_place*8)+1:msg_place*9);
-    pilot, msg_place((msg_place*9)+1:msg_place*10);
-    pilot];
+num_msg = length(msg)/msg_size;
 
-% make sure even number of bits so real and img are equal length
-if mod(length(msg), 2) ~= 0
-    msg = [msg, 0];
+x1 = [freq, timing, pilot];
+
+timing_neg = 2*timing-1;
+pilot_neg = 2*pilot-1;
+pilot_plot = [freq, timing_neg, pilot_neg];
+
+for x = [0:num_msg-1]
+    x1 = [x1, msg((msg_size*x)+1:msg_size*(x+1)), pilot];
+    pilot_plot = [pilot_plot, zeros(1,msg_size), pilot_neg];
 end
-%frequency sync, timing sync, pilot, msg, pilot
-x1 = [freq, timing, pilot, msg, pilot];
+
+len = length(x1)
+if (len > transmit_size)
+    disp("Your transmit signal is too long.");
+end
 
 % make 1 and -1
 x2 = 2*x1-1;
 x2 = x2';
 
+pilot_plot = pilot_plot';
+
 % make scaled to qam
 xI_base = x2(1:2:end);
 xQ_base = x2(2:2:end);
+
+pilot_plot_I = pilot_plot(1:2:end);
+pilot_plot_Q = pilot_plot(2:2:end);
 
 % convolve with pulse
 xI_up = upsample(xI_base, fs/F_sym);
@@ -105,10 +117,19 @@ xQ_up = upsample(xQ_base, fs/F_sym);
 xI = conv(xI_up, p);
 xQ = conv(xQ_up, p);
 
+pilot_plot_I = upsample(pilot_plot_I, fs/F_sym);
+pilot_plot_Q = upsample(pilot_plot_Q, fs/F_sym);
+pilot_plot_I = conv(pilot_plot_I, p);
+pilot_plot_Q = conv(pilot_plot_Q, p);
+
 %% transmit complex symbols
 transmitsignal = (xI + j*xQ);
 transmitsignal = transmitsignal/max(abs(transmitsignal));
 transmitsignal = reshape(transmitsignal, [], 1);
+
+pilot_plot = (pilot_plot_I + j*pilot_plot_Q);
+pilot_plot = pilot_plot/max(abs(pilot_plot));
+pilot_plot = reshape(pilot_plot, [], 1);
 
 save('transmitsignal.mat','transmitsignal')
 
@@ -150,6 +171,8 @@ if showplot == 1
     plot(real(transmitsignal),'b')
     hold on
     plot(imag(transmitsignal),'r')
+    plot(imag(pilot_plot),'y')
+    plot(real(pilot_plot),'g')
     legend('real','imag')
     ylabel('$x^{I}(t)$,  $x^{Q}(t)$')
     xlabel('Time in samples')
@@ -169,6 +192,7 @@ if showplot == 1
     title('Frequency Response of Transmitted Signal')
     set(gca,'fontsize', 15)
     %linkaxes(ax,'x')
+    
     zoom on
 else
     close all
@@ -179,13 +203,15 @@ end
 % get bit array from picture to transmit
 function bits = get_bits(pic)
 
-    global preamble_size num_pilots num_message;
+    global freq_preamble timing_preamble pilot_size
 
     switch pic
         case 0
-            bits = ones(1,preamble_size);
+            bits = ones(1,freq_preamble);
         case 1
-            bits = randi([0 1],1,20);
+            bits = randi([0 1],1,timing_preamble);
+        case 2
+            bits = randi([0 1],1,pilot_size);
         case 10
             bits = [1 1 0 1 0 0 0 1 0 1];
         case 88

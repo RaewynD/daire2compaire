@@ -11,14 +11,14 @@ clear
 rng('default');
 
 % Define User Values
-srrc = 2;
+srrc = 1;
 real_time = 1;
 AWGN = 0;
 
-load transmitsignal.mat
+%load transmitsignal.mat
 
 if srrc == 1
-    load receivedsignal_SRRC
+    %load receivedsignal_SRRC
     load transmitsignal_SRRC
 elseif srrc == 0
     load receivedsignal_RECT
@@ -37,7 +37,7 @@ if AWGN == 1
     E_x = d^2/(6*(M-1)); % Calculate the Symbol Energy
     SNR_mfb_dB = 10^(SNR_mfb_dB/10); % Calculate the SNR
     sigma = sqrt(E_x/SNR_mfb_dB); % Calculate the STD Dev
-    receivedsignal = transmitsignal + sigma/sqrt(2)*(randn(size(transmitsignal))+j*randn(size(transmitsignal)));
+    receivedsignal = exp(j*pi/3)*transmitsignal + sigma/sqrt(2)*(randn(size(transmitsignal))+j*randn(size(transmitsignal)));
 end
 
 load global_vars
@@ -46,6 +46,7 @@ qam = 4;
 D = 1;
 lenp = length(p);
 L = length(msg);
+sN = 9;
 
 % Matched filter
 w = flipud(p);
@@ -53,7 +54,7 @@ w = flipud(p);
 y_received = receivedsignal;
 x_transmitted = transmitsignal;
 
-graph = 1;
+graph = 0;
 
 %% Greeting to the user
 disp(' ')
@@ -98,16 +99,24 @@ zQ = conv(w,yQ)*(1/fs);
 
 %% Sample filtered signal - starts falling apart here
 
-k = 1;
+zIk = zI(sN+length(w)+1:fs*T_sym:end); 
+zQk = zQ(sN+length(w)+1:fs*T_sym:end); 
+
+%zIk = zIk(1:LL);
+%zQk = zQk(1:LL);
+
+zk = (zIk + j*zQk);
+
+%k = 1;
 %zIk = [];
 %zQk = [];
-for s = length(w)+1:T_sym/Ts:length(zI)
-    zk(k*2-1) = zI(s); %odds
-    zk(k*2) = zQ(s); %evens
+%for s = length(w)+1:T_sym/Ts:length(zI)
+%    zk(k*2-1) = zI(s); %odds
+%    zk(k*2) = zQ(s); %evens
 %    zIk(k) = zI(s);
 %    zQk(k) = zQ(s);
-    k = k+1;
-end
+%    k = k+1;
+%end
 
 %xk_should = zk(41:50);
 
@@ -145,6 +154,7 @@ if AWGN == 1
     ho_hat = (pilot * pilot_eye') / (norm(pilot)^2);
 
 else 
+    
     [corr_frame, corr_tau_frame] = xcorr(pilot, zk_bits); %locking in on frame for pilot end
     
     [steve, offset_frame] = max(abs(corr_frame)); %Searching for max value
@@ -181,6 +191,8 @@ end
 %zk_msg = zk(41:50);
 
 vk = zk_msg / ho_hat;
+
+vk1 = zk_bits / ho_hat;
 
 xk_hat = sign(vk);
 xk_hat = (xk_hat>0);
@@ -445,6 +457,15 @@ end
 % Apply Sampling for the Zk bits
 % Apply some quantizing - Rohit recommends a One-Tap Channel
 % Run process to fully lay out the bits
+
+% Phase calculation at each pilot is something to look into
+% Phase offset e^jtheta or e^jtau
+% Then run equalizers
+% The noise at each message/pilot can be significant enough to have a large
+% impact
+
+% Rectangular pulses have some limits. It's band unlimted. The srrc is very
+% effective.
 
 % one of these should provide an AWGN channel coming back to us which is a
 % good thing.

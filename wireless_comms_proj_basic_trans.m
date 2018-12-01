@@ -95,7 +95,7 @@ end
 
 len = length(x1)
 if (len > transmit_size)
-    disp("Your transmit signal is too long.");
+    disp('Your transmit signal is too long.');
 end
 
 % make 1 and -1

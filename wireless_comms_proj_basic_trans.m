@@ -7,19 +7,20 @@
 %% --Main Transmit Code-- %%
 
 clear
-close all
+%close all
 %clc
 % Set seed for random number generator (for repeatability of simulation)
 rng('default');
 
 %user defined values
-picture = -1;
-srrc = 2;
+picture = 13720;
+srrc = 1;
 showplot = 1;
 
-% MUST BE EVEN
-%global preamble_size;
-%preamble_size = 25;
+global preamble_size num_pilots num_message;
+preamble_size = 100; % MUST BE EVEN (Frequency Preamble)
+num_pilots = 11; % MUST BE ODD (Number of pilot messages)
+num_message = num_pilots-1;
 
 d = 1;
 
@@ -29,13 +30,18 @@ Ts = 1/fs;
 fc = 11.25e6; %carrier= 11.25MHz therefore Nyquist is 22.5MHz, which is below the hardware limit
 Tc = 1/fc;
 
-T_sym = 0.5e-6; %100*Tn; %sec / symbol
+T_sym = 0.1e-6; %100*Tn; %sec / symbol
 F_sym = 1/T_sym;
 
 symLen = T_sym * fs; %samples per symbol
 
+N = 10; %length of filter in symbol periods
+Ns = T_sym*N*fs; %Number of filter samples
+
 a = 0.2; %sigma
 
+
+%% Establish Filter
 % Use sqrt-raised cosine filter form 
 % ww=FIRRCOS(N,Fc,R,Fs,'rolloff',TYPE) as p^b(t)
 if srrc == 1
@@ -44,11 +50,13 @@ if srrc == 1
     p = p/norm(p)/sqrt(1/fs);
 % Use rectangular pulse as filter
 else
-    p = [zeros(ceil(symLen/8),1);
-         ones(ceil(symLen/4),1);
-         zeros(ceil(symLen/8),1)];
+    p = [zeros(ceil(symLen/2),1);
+         ones(ceil(symLen),1);
+         zeros(ceil(symLen/2),1)];
     p = p/norm(p)/sqrt(1/fs);
 end
+% As it curently stands, the length of the pulse is at the value of T,
+% which should be Nyquist.
 
 % should be same as symLen
 lenp = length(p);
@@ -61,6 +69,21 @@ freq = get_bits(0);
 timing = get_bits(1);
 pilot = get_bits(1);
 msg = get_bits(picture);
+
+msg_place = length(msg)/num_message;
+
+x1 = [freq, timing, pilot, msg(1:msg_place);
+    pilot, msg_place((msg_place)+1:msg_place*2);
+    pilot, msg_place((msg_place*2)+1:msg_place*3);
+    pilot, msg_place((msg_place*3)+1:msg_place*4);
+    pilot, msg_place((msg_place*4)+1:msg_place*5);
+    pilot, msg_place((msg_place*5)+1:msg_place*6);
+    pilot, msg_place((msg_place*6)+1:msg_place*7);
+    pilot, msg_place((msg_place*7)+1:msg_place*8);
+    pilot, msg_place((msg_place*8)+1:msg_place*9);
+    pilot, msg_place((msg_place*9)+1:msg_place*10);
+    pilot];
+
 % make sure even number of bits so real and img are equal length
 if mod(length(msg), 2) ~= 0
     msg = [msg, 0];
@@ -105,10 +128,10 @@ load receivedsignal.mat
 ax = []; %Axes connections
 
 if srrc == 1
-    load receivedsignal_SRRC
+    %load receivedsignal_SRRC
     load transmitsignal_SRRC
 elseif srrc == 0
-    load receivedsignal_RECT
+    %load receivedsignal_RECT
     load transmitsignal_RECT
 else
 end
@@ -156,11 +179,11 @@ end
 % get bit array from picture to transmit
 function bits = get_bits(pic)
 
-    %global preamble_size;
+    global preamble_size num_pilots num_message;
 
     switch pic
         case 0
-            bits = ones(1,430);
+            bits = ones(1,preamble_size);
         case 1
             bits = randi([0 1],1,20);
         case 10

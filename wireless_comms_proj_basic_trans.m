@@ -95,7 +95,7 @@ end
 
 len = length(x1)
 if (len >= transmit_size)
-    disp("Your transmit signal is too long.");
+    disp('Your transmit signal is too long.');
 else
     x1 = [ones(1,transmit_size-len),x1];
     pilot_plot = [ones(1,transmit_size-len),pilot_plot];
@@ -138,7 +138,7 @@ pilot_plot = reshape(pilot_plot, [], 1);
 save('transmitsignal.mat','transmitsignal')
 
 % save for analysis in receive
-save global_vars.mat d fs Ts fc Tc T_sym F_sym symLen a p timing pilot msg
+save global_vars.mat d fs Ts fc Tc T_sym F_sym symLen a p timing pilot msg N Ns
 
 if srrc == 1
     save('transmitsignal_SRRC.mat','transmitsignal')

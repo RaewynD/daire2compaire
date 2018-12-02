@@ -99,13 +99,20 @@ zQ = conv(w,yQ)*(1/fs);
 
 %% Sample filtered signal - starts falling apart here
 
-zIk = zI(sN+length(w)+1:fs*T_sym:end); 
-zQk = zQ(sN+length(w)+1:fs*T_sym:end); 
+max_corr = 0;
+max_n = 0;
+
+for n=[0:sN+length(w)-1]
+    zIk = zI(sN+length(w)+n:fs*T_sym:end); 
+    zQk = zQ(sN+length(w)+n:fs*T_sym:end); 
 
 %zIk = zIk(1:LL);
 %zQk = zQk(1:LL);
 
-zk = (zIk + j*zQk);
+    zk = (zIk + j*zQk);
+
+    zk_sign = sign(zk);
+    zk_bits = (zk_sign>0);
 
 %k = 1;
 %zIk = [];
@@ -125,6 +132,22 @@ zk = (zIk + j*zQk);
 
 %% Frame Recovery
 % remove when not doing phase recovery, too
+
+    [corr_frame, corr_tau_frame] = xcorr(pilot, zk_bits); %locking in on the frame
+    [corr_val, offset_frame] = max(abs(corr_frame)); %locked
+    tau_frame = abs(corr_tau_frame(offset_frame))+1;
+    
+    if corr_val > max_corr
+        max_corr = corr_val;
+        max_n = n;
+    end
+    
+end
+
+zIk = zI(sN+length(w)+max_n:fs*T_sym:end); 
+zQk = zQ(sN+length(w)+max_n:fs*T_sym:end); 
+
+zk = (zIk + j*zQk);
 
 zk_sign = sign(zk);
 zk_bits = (zk_sign>0);

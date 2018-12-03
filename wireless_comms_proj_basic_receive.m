@@ -180,33 +180,17 @@ set(gca,'fontsize', 15)
 
 %% --Sample filtered signal - starts falling apart here-- %%
 
-zIk = zI(-Ns+length(w):fs*T_sym:end); 
-zQk = zQ(-Ns+length(w):fs*T_sym:end); 
+if srrc == 1
+    zIk = zI(-Ns+length(w):fs*T_sym:end); 
+    zQk = zQ(-Ns+length(w):fs*T_sym:end);
+else
+    zIk = zI(1:fs*T_sym:end); 
+    zQk = zQ(1:fs*T_sym:end);
+end
 
 zk = (zIk + j*zQk);
 
 zk = zk(length(timing)+1 : end);
-
-%zIk_hat = sign(zIk); 
-%zQk_hat = sign(zQk);
-%zbitI_hat = (zIk_hat>0);
-%zbitQ_hat = (zQk_hat>0);
-
-%zk = reshape([zbitI_hat; zbitQ_hat],2,length(zIk));
-
-%k = 1;
-%zIk = [];
-%zQk = [];
-%for s = 1:length(zIk)
-%    z_k(k*2-1) = zIk(s); %odds
-%    z_k(k*2) = zQk(s); %evens
-%    k = k+1;
-%end
-
-%xk_should = zk(41:50);
-
-%xkI_should = xk_should(1:2:end);
-%xkQ_should = xk_should(2:2:end);
 
 figure(12)
 LargeFigure(gcf, 0.15); % Make figure large
@@ -239,14 +223,14 @@ linkaxes(zz,'x')
 figure(13)
 LargeFigure(gcf, 0.15); % Make figure large
 clf
-zz(3) = subplot(3,1,1);
+zy(1) = subplot(3,1,1);
 zoom on;
 plot(zI(length(timing)+951:end),'b') 
 hold on; 
 stem(upsample(real(zk),fs/F_sym),'r') 
 title('New Timing signal (zI) and sampled (zIk)')
 set(gca,'fontsize', 15)
-zz(4) = subplot(3,1,2);
+zy(2) = subplot(3,1,2);
 zoom on;
 plot(zQ(length(timing)+951:end),'b') 
 hold on; 
@@ -261,7 +245,7 @@ line([0 0], ylim)
 line(xlim, [0 0])
 title('Complexspace of zk')
 set(gca,'fontsize', 15)
-linkaxes(zz,'x')
+linkaxes(zy,'x')
 
 %% --Equalization-- %%
 
@@ -275,6 +259,7 @@ zk_start = length(complex_pilot)+1 + msg_size/2 + 1;
 
 msg_hat = [];
 ho_hat_pops = [];
+vk_all = [];
 
 
 for cnt = 1:num_msg
@@ -284,7 +269,7 @@ for cnt = 1:num_msg
     
     %ho_hat = (w'*kz(1:length(complex_pilot)))/(w'*complex_pilot)
     %ho_hat = (complex_pilot' .* kz(1:length(complex_pilot)))/(norm(complex_pilot)^2);
-    ho_hat = dot(conj(complex_pilot),zk(1:length(complex_pilot)))/norm(complex_pilot)^2;
+    ho_hat = dot(conj(complex_pilot),zk_pilot)/norm(complex_pilot)^2;
     ho_hat_pops = [ho_hat_pops,ho_hat];
 
     %% Detect bits - One Tap Channel
@@ -305,13 +290,14 @@ for cnt = 1:num_msg
     xk_hat = reshape(xk_hat,1,length(xk_hat));
     
     msg_hat = [msg_hat,xk_hat];
+    vk_all = [vk_all;vk];
     
+    figure(14)
     if cnt == 1
-        figure(14)
         LargeFigure(gcf, 0.15); % Make figure large
         clf
     end
-    %subplot(3,1,3)
+    subplot(2,2,[1,2])
     scatter(real(vk),imag(vk))
     box on;
     grid on;
@@ -320,19 +306,53 @@ for cnt = 1:num_msg
     line(xlim, [0 0])
     title('Complexspace of vk post equalization')
     set(gca,'fontsize', 15)
-    %subplot(3,1,1)
-    %stem(real(vk),'b')
+    subplot(2,2,[3,4])
+    stem(real(vk_all),'b')
+    box on;
+    grid on;
+    hold on;
     %title('vIk')
     %subplot(3,1,2)
-    %stem(imag(vk),'r')
+    stem(imag(vk_all),'r')
+    legend('vIk','vQk')
+    title('All of vk')
     %title('vQk')
-    pause(0.5)
+    pause(0.125);
+    pause();
+    
+    figure(15)
+    if cnt == 1
+        LargeFigure(gcf, 0.15); % Make figure large
+        clf
+    end
+    subplot(2,1,1)
+    stem(real(complex_pilot),'b')
+    hold on;
+    stem(real(zk_pilot/ho_hat),'r')
+    legend('Complex Pilot','Sampled pilot')
+    box on;
+    grid on;
+    title('Real Pilot Competition')
+    set(gca,'fontsize', 15)
+    hold off;
+    subplot(2,1,2)
+    stem(imag(complex_pilot),'b')
+    hold on;
+    stem(imag(zk_pilot/ho_hat),'r')
+    legend('Complex Pilot','Sampled pilot')
+    box on;
+    grid on;
+    title('Imaginary Pilot Competition')
+    set(gca,'fontsize', 15)
+    hold off;
+    pause(0.125);
+    pause();
 
 end
 
 msg_hat_img = msg_hat(1:imdim(1)*imdim(2));
 
-figure(15)
+figure(16)
 LargeFigure(gcf, 0.15); % Make figure large
 clf
 subplot(1,2,1)
@@ -341,9 +361,11 @@ title('Desired Image')
 set(gca,'fontsize', 15)
 subplot(1,2,2)
 imshow(reshape(msg_hat(1:imdim(1)*imdim(2)),imdim))
-title('What is good mayne?')
+title('What is good mayne? [Rohit Attempt]')
 set(gca,'fontsize', 15)
-    
+
+figure(15)
+
 %% --Additional chat with user-- %%
 pause(1);
 disp(' ')
@@ -354,7 +376,7 @@ disp(['Was this your message?: ' num2str(xk_hat)])
 
 %% -- BER Calculation-- %%
 % Compute Bit error rate (BER)
-BER = mean(msg_hat_img ~= msg);
+BER = mean(msg_hat_img ~= bits);
 disp(' ')
 disp(['Your BER is: ' num2str(BER)])
 disp(' ')

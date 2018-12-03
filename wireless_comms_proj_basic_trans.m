@@ -36,7 +36,7 @@ F_sym = 1/T_sym;
 
 symLen = T_sym * fs; %samples per symbol
 
-N = 10; %length of filter in symbol periods (0-24
+N = 10; %length of filter in symbol periods (0-24)
 Ns = T_sym*N*fs; %Number of filter samples
 
 a = 0.2; %sigma
@@ -55,10 +55,16 @@ if srrc == 1
     p = p/norm(p)/sqrt(1/fs);
 % Use rectangular pulse as filter
 else
+%    p = [zeros(ceil(Ns/2-T_sym*fs/2),1);
+%         ones(ceil(T_sym*fs),1);
+%         zeros(N-T_sym*fs-ceil(Ns/2-T_sym*fs/2),1)];
+%    p = p/norm(p)/sqrt(1/fs);
+    
     p = [zeros(ceil(symLen/2),1);
          ones(ceil(symLen),1);
          zeros(ceil(symLen/2),1)];
     p = p/norm(p)/sqrt(1/fs);
+    
 end
 % As it curently stands, the length of the pulse is at the value of T,
 % which should be Nyquist.

@@ -73,8 +73,11 @@ lenp = length(p);
 freq = get_bits(0);
 timing = get_bits(1);
 pilot = get_bits(2);
-msg = get_bits(picture);
+[msg,imdim] = get_pic(picture);
+bits = msg;
 len = length(msg);
+
+imrecon = reshape(bits,imdim);
 
 % make sure msg is factor of message_size
 to_add = zeros(1,mod(len, msg_size));
@@ -161,13 +164,14 @@ if showplot == 1
     figure(1)
     LargeFigure(gcf, 0.15); % Make figure large
     clf
-    subplot(2,2,1);
+    h(1) = subplot(3,2,1);
     plot([1:length(p)]/fs,p)
     ylabel('$p^{transmit}(t)$')
     xlabel('Time (s)')
     title('Pulse Signal')
     set(gca,'fontsize', 15)
-    ax(1) = subplot(2,2,3);
+    ax(1) = subplot(3,2,3);
+    h(3) = ax(1);
     plot(real(transmitsignal),'b')
     hold on
     plot(imag(transmitsignal),'r')
@@ -178,29 +182,36 @@ if showplot == 1
     xlabel('Time in samples')
     title('Transmitted Signal')
     set(gca,'fontsize', 15)
-    subplot(2,2,2);
+    h(2) = subplot(3,2,2);
     plot([-lenp/2+1:lenp/2]/lenp*fs,20*log10(abs(fftshift(1/sqrt(lenp)*fft(p)))))
     ylabel('$|P^{transmit}(f)|$')
     xlabel('Frequency')
     title('Frequency Response of Pulse')
     axis([-4*fc 4*fc -Inf Inf])
     set(gca,'fontsize', 15)
-    ax(2) = subplot(2,2,4);
+    ax(2) = subplot(3,2,4);
+    h(4) = ax(2);
     plot([0:length(transmitsignal)-1]/length(transmitsignal)-0.5, abs(fftshift(fft(transmitsignal))))
     ylabel('$|X^{base}(f)|$')
     xlabel('Frequency in 1/samples')
     title('Frequency Response of Transmitted Signal')
     set(gca,'fontsize', 15)
     %linkaxes(ax,'x')
-    
     zoom on
+    h(5) = subplot(3,2,5);
+    imshow(imrecon)
+    xlabel('Desired Image')
+    pos = get(h,'Position');
+    new = mean(cellfun(@(v)v(1),pos(1:2)));
+    set(h(5),'Position',[new,pos{end}(2:end)])
+    
 else
     close all
 end
 
 %% ---Helper Functions--- %%
 
-% get bit array from picture to transmit
+% get frequency preamble, timing preamble, and pilot to transmit
 function bits = get_bits(pic)
 
     global freq_preamble timing_preamble pilot_size
@@ -212,39 +223,51 @@ function bits = get_bits(pic)
             bits = randi([0 1],1,timing_preamble);
         case 2
             bits = randi([0 1],1,pilot_size);
-        case 10
+        otherwise
             bits = [1 1 0 1 0 0 0 1 0 1];
+    end
+end
+
+function [bits,imdim] = get_pic(pic)
+
+    switch pic
         case 88
             A = imread('shannon88.bmp');
+            imdim = size(A);
             bits = A(:);
             bits = bits';
         case 816
             A = imread('shannon816.bmp');
+            imdim = size(A);
             bits = A(:);
             bits = bits';
         case 3036
             A = imread('shannon3036.bmp');
+            imdim = size(A);
             bits = A(:);
             bits = bits';
         case 6596
             A = imread('shannon6596.bmp');
+            imdim = size(A);
             bits = A(:);
             bits = bits';
         case 13720
             A = imread('shannon13720.bmp');
+            imdim = size(A);
             bits = A(:);
             bits = bits';
         case 24180
             A = imread('shannon24180.bmp');
+            imdim = size(A);
             bits = A(:);
             bits = bits';
         case 46260
             A = imread('shannon46260.bmp');
+            imdim = size(A);
             bits = A(:);
             bits = bits';
         otherwise
             bits = [1 1 0 1 0 0 0 1 0 1];
     end
 end
-
 

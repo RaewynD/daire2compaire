@@ -144,7 +144,7 @@ else
 end
 
 %% Plot time and frequency domain signals
-load receivedsignal.mat
+%load receivedsignal.mat
 
 ax = []; %Axes connections
 

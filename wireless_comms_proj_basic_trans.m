@@ -16,7 +16,7 @@ global freq_preamble timing_preamble pilot_size
 
 %user defined values
 picture = 13720;
-srrc = 0;
+srrc = 1;
 showplot = 1;
 freq_preamble = 300;
 timing_preamble = 50;
@@ -102,7 +102,7 @@ for x = [0:num_msg-1]
     pilot_plot = [pilot_plot, zeros(1,msg_size), pilot_neg];
 end
 
-len = length(x1)
+len = length(x1);
 if (len > transmit_size)
     disp('Your transmit signal is too long.');
 end

@@ -11,7 +11,7 @@ clear
 rng('default');
 
 % Define User Values
-srrc = 0;
+srrc = 1;
 real_time = 1;
 AWGN = 0;
 
@@ -318,7 +318,7 @@ for cnt = 1:num_msg
     title('All of vk')
     %title('vQk')
     pause(0.125);
-    pause();
+    %pause();
     
     figure(15)
     if cnt == 1
@@ -346,9 +346,11 @@ for cnt = 1:num_msg
     set(gca,'fontsize', 15)
     hold off;
     pause(0.125);
-    pause();
+    %pause();
 
 end
+
+pause();
 
 msg_hat_img = msg_hat(1:imdim(1)*imdim(2));
 

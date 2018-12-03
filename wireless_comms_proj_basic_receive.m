@@ -46,7 +46,7 @@ qam = 4;
 D = 1;
 lenp = length(p);
 L = length(msg);
-sN = 9;
+
 
 % Matched filter
 w = flipud(p);
@@ -99,22 +99,24 @@ zQ = conv(w,yQ)*(1/fs);
 
 %% Sample filtered signal - starts falling apart here
 
-zIk = zI(sN+length(w)+1:fs*T_sym:end); 
-zQk = zQ(sN+length(w)+1:fs*T_sym:end); 
-
-%zIk = zIk(1:LL);
-%zQk = zQk(1:LL);
+zIk = zI(-200+length(w):fs*T_sym:end); 
+zQk = zQ(-200+length(w):fs*T_sym:end); 
 
 zk = (zIk + j*zQk);
+
+%zIk_hat = sign(zIk); 
+%zQk_hat = sign(zQk);
+%zbitI_hat = (zIk_hat>0);
+%zbitQ_hat = (zQk_hat>0);
+
+%zk = reshape([zbitI_hat; zbitQ_hat],2,length(zIk));
 
 %k = 1;
 %zIk = [];
 %zQk = [];
-%for s = length(w)+1:T_sym/Ts:length(zI)
-%    zk(k*2-1) = zI(s); %odds
-%    zk(k*2) = zQ(s); %evens
-%    zIk(k) = zI(s);
-%    zQk(k) = zQ(s);
+%for s = 1:length(zIk)
+%    zk(k*2-1) = zIk(s); %odds
+%    zk(k*2) = zQk(s); %evens
 %    k = k+1;
 %end
 
@@ -135,9 +137,9 @@ if AWGN == 1
     [~, offset_frame] = max(abs(corr_frame)); %locked
     tau_frame = abs(corr_tau_frame(offset_frame))+1;
     
-    msg_start = tau_frame-(length(pilot)/2); %Pushes to be at start of message
+    msg_start = tau_frame+length(pilot); %Pushes to be at start of message
     
-    pilot_start = tau_frame-(3*length(pilot)/2); %Aligns to Pilot start
+    pilot_start = tau_frame%-(3*length(pilot)/2); %Aligns to Pilot start
     
     msg_eye = zk(msg_start:tau_frame-1); %Message found and located
     
@@ -156,31 +158,31 @@ if AWGN == 1
 else 
     
     [corr_frame, corr_tau_frame] = xcorr(pilot, zk_bits); %locking in on frame for pilot end
-    
-    [steve, offset_frame] = max(abs(corr_frame)); %Searching for max value
-    [nick, offset_frame2] = max(abs(corr_frame(1:offset_frame-1))); %Searching for a potentially earlier max value
-    
-    if abs(int8(nick))==abs(steve) %Checking to see if there is a max earlier than what it's returning
+    %
+    [steve, offset_frame] = max(abs(int8(corr_frame))); %Searching for max value
+    [nick, offset_frame2] = max(abs(int8(corr_frame(1:offset_frame-1)))); %Searching for a potentially earlier max value
+    %
+    if abs(nick)==abs(steve) %Checking to see if there is a max earlier than what it's returning
         offset_frame = offset_frame2;
     end
-    
-    tau_frame = abs(corr_tau_frame(offset_frame))+1;
-    
-    msg_start = tau_frame-(length(pilot)/2); %Pushes to be at start of message
-    
-    pilot_start = tau_frame-(3*length(pilot)/2); %Aligns to Pilot start
-    
-    msg_eye = zk(msg_start:tau_frame-1); %Message found and located?
-    
-    pilot_eye = zk(pilot_start:tau_frame-(length(pilot)/2)-1); %Should line-up to pilot end before msg
-    
-    zk_bits2 = zk_bits(msg_start:end);
-    
-    [corr_frame_end, corr_tau_frame_end] = xcorr(pilot, zk_bits2);
-    [~, offset_end] = max(abs(corr_frame_end));
-    tau_frame_end = abs(corr_tau_frame_end(offset_end)); %Determines end of msg
-    
-    zk_msg = zk(msg_start:msg_start+tau_frame_end-1); %comes out to zk(41:50)
+    %
+    tau_frame = offset_frame;%abs(corr_tau_frame(offset_frame))+1; %END OF PILOT MESSAGE
+    %
+    %msg_start = tau_frame+length(pilot); %Pushes to be at start of message
+    %
+    %pilot_start = tau_frame-(3*length(pilot)/2); %Aligns to Pilot start
+    %
+    %msg_eye = zk(msg_start:tau_frame-1); %Message found and located?
+    %
+    %pilot_eye = zk(pilot_start:tau_frame-(length(pilot)/2)); %Should line-up to pilot end before msg
+    %
+    %zk_bits2 = zk_bits(msg_start:end);
+    %
+    %[corr_frame_end, corr_tau_frame_end] = xcorr(pilot, zk_bits2);
+    %[~, offset_end] = max(abs(corr_frame_end));
+    %tau_frame_end = abs(corr_tau_frame_end(offset_end)); %Determines end of msg
+    %
+    %zk_msg = zk(msg_start:msg_start+tau_frame_end-1); %comes out to zk(41:50)
     
     ho_hat = (pilot * pilot_eye') / (norm(pilot)^2);
 
@@ -280,6 +282,8 @@ if graph == 1
     plot(real(x_transmitted),'b')
     hold on
     plot(imag(x_transmitted),'r')
+    %plot(imag(pilot_plot),'y')
+    %plot(real(pilot_plot),'g')
     legend('real','imag')
     ylabel('$x^{I}(t)$, $x^{Q}(t)$')
     xlabel('Time in samples')

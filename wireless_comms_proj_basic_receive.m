@@ -11,7 +11,7 @@ clear
 rng('default');
 
 % Define User Values
-srrc = 1;
+srrc = 0;
 real_time = 1;
 AWGN = 0;
 
@@ -21,7 +21,7 @@ if srrc == 1
     %load receivedsignal_SRRC
     load transmitsignal_SRRC
 elseif srrc == 0
-    load receivedsignal_RECT
+    %load receivedsignal_RECT
     load transmitsignal_RECT
 else
 end
@@ -46,7 +46,7 @@ qam = 4;
 D = 1;
 lenp = length(p);
 L = length(msg);
-msg_size = 150;
+
 
 % Matched filter
 w = flipud(p);
@@ -62,6 +62,7 @@ clf
 subplot(3,1,1)
 plot(w)
 title('Matched Filter')
+set(gca,'fontsize', 15)
 subplot(3,1,2)
 plot(real(x_transmitted),'b')
 hold on;
@@ -69,12 +70,13 @@ plot(imag(x_transmitted),'r')
 plot(imag(pilot_plot),'y')
 plot(real(pilot_plot),'g')
 title('Transmitted Signal')
+set(gca,'fontsize', 15)
 subplot(3,1,3)
 plot(real(y_received),'b')
 hold on;
 plot(imag(y_received),'r')
 title('Received Signal')
-
+set(gca,'fontsize', 15)
 
 %% --Greeting to the user-- %%
 
@@ -89,6 +91,7 @@ LargeFigure(gcf, 0.15); % Make figure large
 clf
 stem(pilot)
 title('Pilot Signal')
+set(gca,'fontsize', 15)
 
 %% --Apply Timing Recovery-- %%
 
@@ -119,25 +122,31 @@ clf
 subplot(3,2,1)
 stem(timing)
 title('Timing Signal')
+set(gca,'fontsize', 15)
 subplot(3,2,2)
 scatter(real(timing_sent),imag(timing_sent))
 title('Quantized Timing')
+set(gca,'fontsize', 15)
 subplot(3,2,5)
 plot(real(y_received),'b')
 hold on;
 plot(imag(y_received),'r')
 title('Received Signal')
+set(gca,'fontsize', 15)
 subplot(3,2,3)
 plot(abs(corr_time))
 title('Time Correlation (Time)')
+set(gca,'fontsize', 15)
 subplot(3,2,4)
 plot(corr_tau_time)
 title('Time Correlation (Time Tau)')
+set(gca,'fontsize', 15)
 subplot(3,2,6)
 plot(real(y_received_timing),'b')
 hold on;
 plot(imag(y_received_timing),'r')
 title('Y - Time Recovered')
+set(gca,'fontsize', 15)
 
 %% --Grab and separate into REAL and IMAGINARY-- %%
 
@@ -158,6 +167,7 @@ plot(zI,'b')
 hold on;
 plot(zQ,'r')
 title('Post LPF Signal')
+set(gca,'fontsize', 15)
 subplot(2,1,2)
 scatter(zI,zQ)
 box on;
@@ -166,6 +176,7 @@ hold on;
 line([0 0], ylim)
 line(xlim, [0 0])
 title('Post LPF in bitspace')
+set(gca,'fontsize', 15)
 
 %% --Sample filtered signal - starts falling apart here-- %%
 
@@ -206,12 +217,14 @@ plot(zI,'b')
 hold on; 
 stem(upsample(zIk,fs/F_sym),'r') 
 title('Post LPF signal (zI) and sampled (zIk)')
+set(gca,'fontsize', 15)
 zz(2) = subplot(3,1,2);
 zoom on;
 plot(zQ,'b') 
 hold on; 
 stem(upsample(zQk,fs/F_sym),'r') 
 title('Post LPF signal (zQ) and sampled (zQk)')
+set(gca,'fontsize', 15)
 subplot(3,1,3)
 scatter(zIk,zQk)
 box on;
@@ -220,6 +233,7 @@ hold on;
 line([0 0], ylim)
 line(xlim, [0 0])
 title('Complexspace of zk')
+set(gca,'fontsize', 15)
 linkaxes(zz,'x')
 
 figure(13)
@@ -231,12 +245,14 @@ plot(zI(length(timing)+951:end),'b')
 hold on; 
 stem(upsample(real(zk),fs/F_sym),'r') 
 title('New Timing signal (zI) and sampled (zIk)')
+set(gca,'fontsize', 15)
 zz(4) = subplot(3,1,2);
 zoom on;
 plot(zQ(length(timing)+951:end),'b') 
 hold on; 
 stem(upsample(imag(zk),fs/F_sym),'r') 
 title('New Timing signal (zQ) and sampled (zQk)')
+set(gca,'fontsize', 15)
 subplot(3,1,3)
 scatter(real(zk),imag(zk))
 box on;
@@ -244,6 +260,7 @@ grid on;
 line([0 0], ylim)
 line(xlim, [0 0])
 title('Complexspace of zk')
+set(gca,'fontsize', 15)
 linkaxes(zz,'x')
 
 %% --Equalization-- %%
@@ -302,6 +319,7 @@ for cnt = 1:num_msg
     line([0 0], ylim)
     line(xlim, [0 0])
     title('Complexspace of vk post equalization')
+    set(gca,'fontsize', 15)
     %subplot(3,1,1)
     %stem(real(vk),'b')
     %title('vIk')
@@ -320,9 +338,11 @@ clf
 subplot(1,2,1)
 imshow(reshape(bits,imdim))
 title('Desired Image')
+set(gca,'fontsize', 15)
 subplot(1,2,2)
 imshow(reshape(msg_hat(1:imdim(1)*imdim(2)),imdim))
 title('What is good mayne?')
+set(gca,'fontsize', 15)
     
 %% --Additional chat with user-- %%
 pause(1);

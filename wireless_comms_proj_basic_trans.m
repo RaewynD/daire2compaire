@@ -16,7 +16,7 @@ global freq_preamble timing_preamble pilot_size
 
 %user defined values
 picture = 13720;
-srrc = 1;
+srrc = 0;
 showplot = 1;
 freq_preamble = 300;
 timing_preamble = 50;
@@ -204,6 +204,7 @@ if showplot == 1
     pos = get(h,'Position');
     new = mean(cellfun(@(v)v(1),pos(1:2)));
     set(h(5),'Position',[new,pos{end}(2:end)])
+    set(gca,'fontsize', 15)
     
 else
     close all

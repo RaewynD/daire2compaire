@@ -160,6 +160,11 @@ plot(zQ,'r')
 title('Post LPF Signal')
 subplot(2,1,2)
 scatter(zI,zQ)
+box on;
+grid on;
+hold on;
+line([0 0], ylim)
+line(xlim, [0 0])
 title('Post LPF in bitspace')
 
 %% --Sample filtered signal - starts falling apart here-- %%
@@ -209,7 +214,12 @@ stem(upsample(zQk,fs/F_sym),'r')
 title('Post LPF signal (zQ) and sampled (zQk)')
 subplot(3,1,3)
 scatter(zIk,zQk)
-title('Bitspace of zk')
+box on;
+grid on;
+hold on;
+line([0 0], ylim)
+line(xlim, [0 0])
+title('Complexspace of zk')
 linkaxes(zz,'x')
 
 figure(13)
@@ -229,44 +239,91 @@ stem(upsample(imag(zk),fs/F_sym),'r')
 title('New Timing signal (zQ) and sampled (zQk)')
 subplot(3,1,3)
 scatter(real(zk),imag(zk))
-title('Bitspace of zk')
+box on;
+grid on;
+line([0 0], ylim)
+line(xlim, [0 0])
+title('Complexspace of zk')
 linkaxes(zz,'x')
 
 %% --Equalization-- %%
 
+zk_orig = zk;
+
 complex_pilot = pilot(1:2:end) + j*pilot(2:2:end);
-zk_pilot = zk(1 : length(complex_pilot));
-zk_msg = zk(length(complex_pilot)+1 : msg_size/2);
-%ho_hat = (w'*kz(1:length(complex_pilot)))/(w'*complex_pilot)
-%ho_hat = (complex_pilot' .* kz(1:length(complex_pilot)))/(norm(complex_pilot)^2);
-ho_hat = dot(conj(complex_pilot),zk(1:length(complex_pilot)))/norm(complex_pilot)^2;
+zk_pilot_end = length(complex_pilot);
+zk_msg_start = length(complex_pilot) + 1;
+zk_msg_end = length(complex_pilot)+1 + msg_size/2; %msg_size is in bit space
+zk_start = length(complex_pilot)+1 + msg_size/2 + 1;
 
-%% Detect bits - One Tap Channel
+msg_hat = [];
+ho_hat_pops = [];
 
-vk = zk_msg / ho_hat;
 
-xk_hat = sign(vk);
-xk_hat = (xk_hat>0);
-xk_hat = reshape(xk_hat,1,length(xk_hat));
-%
-%vIk = vk(1:2:end);
-%vQk = vk(2:2:end);
+for cnt = 1:num_msg
+    zk_pilot = zk(1 : zk_pilot_end);
+    zk_msg = zk(zk_msg_start : zk_msg_end);
+    zk = zk(zk_start : end);
+    
+    %ho_hat = (w'*kz(1:length(complex_pilot)))/(w'*complex_pilot)
+    %ho_hat = (complex_pilot' .* kz(1:length(complex_pilot)))/(norm(complex_pilot)^2);
+    ho_hat = dot(conj(complex_pilot),zk(1:length(complex_pilot)))/norm(complex_pilot)^2;
+    ho_hat_pops = [ho_hat_pops,ho_hat];
 
-%v_k = vIk + j*vQk;
+    %% Detect bits - One Tap Channel
 
-figure(14)
+    vk = zk_msg / ho_hat;
+    
+    vIk = real(vk);
+    vQk = imag(vk);
+    
+    vk_bits = [];
+    
+    for x = 1:length(vIk)
+        vk_bits = [vk_bits,vIk(x),vQk(x)];
+    end
+    
+    xk_hat = sign(vk_bits);
+    xk_hat = (xk_hat>0);
+    xk_hat = reshape(xk_hat,1,length(xk_hat));
+    
+    msg_hat = [msg_hat,xk_hat];
+    
+    if cnt == 1
+        figure(14)
+        LargeFigure(gcf, 0.15); % Make figure large
+        clf
+    end
+    %subplot(3,1,3)
+    scatter(real(vk),imag(vk))
+    box on;
+    grid on;
+    hold on;
+    line([0 0], ylim)
+    line(xlim, [0 0])
+    title('Complexspace of vk post equalization')
+    %subplot(3,1,1)
+    %stem(real(vk),'b')
+    %title('vIk')
+    %subplot(3,1,2)
+    %stem(imag(vk),'r')
+    %title('vQk')
+    pause(0.5)
+
+end
+
+msg_hat_img = msg_hat(1:imdim(1)*imdim(2));
+
+figure(15)
 LargeFigure(gcf, 0.15); % Make figure large
 clf
-subplot(3,1,3)
-scatter(real(vk),imag(vk))
-title('Bitspace of vk')
-subplot(3,1,1)
-stem(real(vk),'b')
-title('vIk')
-subplot(3,1,2)
-stem(imag(vk),'r')
-title('vQk')
-
+subplot(1,2,1)
+imshow(reshape(bits,imdim))
+title('Desired Image')
+subplot(1,2,2)
+imshow(reshape(msg_hat(1:imdim(1)*imdim(2)),imdim))
+title('What is good mayne?')
+    
 %% --Additional chat with user-- %%
 pause(1);
 disp(' ')
@@ -277,7 +334,7 @@ disp(['Was this your message?: ' num2str(xk_hat)])
 
 %% -- BER Calculation-- %%
 % Compute Bit error rate (BER)
-BER = mean(xk_hat ~= msg);
+BER = mean(msg_hat_img ~= msg);
 disp(' ')
 disp(['Your BER is: ' num2str(BER)])
 disp(' ')

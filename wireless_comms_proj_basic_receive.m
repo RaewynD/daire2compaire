@@ -317,35 +317,35 @@ for cnt = 1:num_msg
     legend('vIk','vQk')
     title('All of vk')
     %title('vQk')
-    pause(0.125);
+    %pause(0.125);
     %pause();
     
-    figure(15)
-    if cnt == 1
-        LargeFigure(gcf, 0.15); % Make figure large
-        clf
-    end
-    subplot(2,1,1)
-    stem(real(complex_pilot),'b')
-    hold on;
-    stem(real(zk_pilot/ho_hat),'r')
-    legend('Complex Pilot','Sampled pilot')
-    box on;
-    grid on;
-    title('Real Pilot Competition')
-    set(gca,'fontsize', 15)
-    hold off;
-    subplot(2,1,2)
-    stem(imag(complex_pilot),'b')
-    hold on;
-    stem(imag(zk_pilot/ho_hat),'r')
-    legend('Complex Pilot','Sampled pilot')
-    box on;
-    grid on;
-    title('Imaginary Pilot Competition')
-    set(gca,'fontsize', 15)
-    hold off;
-    pause(0.125);
+    %figure(15)
+    %if cnt == 1
+    %    LargeFigure(gcf, 0.15); % Make figure large
+    %    clf
+    %end
+    %subplot(2,1,1)
+    %stem(real(complex_pilot),'b')
+    %hold on;
+    %stem(real(zk_pilot/ho_hat),'r')
+    %legend('Complex Pilot','Sampled pilot')
+    %box on;
+    %grid on;
+    %title('Real Pilot Competition')
+    %set(gca,'fontsize', 15)
+    %hold off;
+    %subplot(2,1,2)
+    %stem(imag(complex_pilot),'b')
+    %hold on;
+    %stem(imag(zk_pilot/ho_hat),'r')
+    %legend('Complex Pilot','Sampled pilot')
+    %box on;
+    %grid on;
+    %title('Imaginary Pilot Competition')
+    %set(gca,'fontsize', 15)
+    %hold off;
+    %pause(0.125);
     %pause();
 
 end
@@ -366,7 +366,7 @@ imshow(reshape(msg_hat(1:imdim(1)*imdim(2)),imdim))
 title('What is good mayne? [Rohit Attempt]')
 set(gca,'fontsize', 15)
 
-figure(15)
+%figure(15)
 
 %% --Additional chat with user-- %%
 pause(1);

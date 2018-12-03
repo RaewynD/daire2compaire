@@ -36,7 +36,7 @@ F_sym = 1/T_sym;
 
 symLen = T_sym * fs; %samples per symbol
 
-N = 10; %length of filter in symbol periods (0-24)
+N = 8; %length of filter in symbol periods (0-24)
 Ns = T_sym*N*fs; %Number of filter samples
 
 a = 0.2; %sigma

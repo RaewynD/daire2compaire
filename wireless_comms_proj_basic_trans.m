@@ -137,7 +137,7 @@ pilot_plot = reshape(pilot_plot, [], 1);
 save('transmitsignal.mat','transmitsignal')
 
 % save for analysis in receive
-save global_vars.mat d fs Ts fc Tc T_sym F_sym symLen a p timing pilot msg N Ns num_msg pilot_plot bits imdim
+save global_vars.mat d fs Ts fc Tc T_sym F_sym symLen a p timing pilot msg N Ns num_msg pilot_plot bits imdim msg_size
 
 if srrc == 1
     save('transmitsignal_SRRC.mat','transmitsignal')

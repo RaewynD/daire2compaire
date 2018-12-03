@@ -43,7 +43,7 @@ a = 0.2; %sigma
 
 time = 800e-6;
 bits_per_sym = 2;
-transmit_size = floor((time / T_sym) * bits_per_sym)-10;
+transmit_size = (time / T_sym) * bits_per_sym;
 
 
 %% Establish Filter
@@ -94,13 +94,9 @@ for x = [0:num_msg-1]
 end
 
 len = length(x1)
-if (len >= transmit_size)
+if (len > transmit_size)
     disp('Your transmit signal is too long.');
-else
-    x1 = [ones(1,transmit_size-len),x1];
-    pilot_plot = [ones(1,transmit_size-len),pilot_plot];
 end
-len = length(x1)
 
 % make 1 and -1
 x2 = 2*x1-1;

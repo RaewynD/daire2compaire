@@ -46,7 +46,7 @@ qam = 4;
 D = 1;
 lenp = length(p);
 L = length(msg);
-
+msg_size = 150;
 
 % Matched filter
 w = flipud(p);
@@ -164,21 +164,12 @@ title('Post LPF in bitspace')
 
 %% --Sample filtered signal - starts falling apart here-- %%
 
+zIk = zI(-Ns+length(w):fs*T_sym:end); 
+zQk = zQ(-Ns+length(w):fs*T_sym:end); 
 
-max_corr = 0;
-max_n = 0;
+zk = (zIk + j*zQk);
 
-for n=[0:sN+length(w)-1]
-    zIk = zI(sN+length(w)+n:fs*T_sym:end); 
-    zQk = zQ(sN+length(w)+n:fs*T_sym:end); 
-
-%zIk = zIk(1:LL);
-%zQk = zQk(1:LL);
-
-    zk = (zIk + j*zQk);
-
-    zk_sign = sign(zk);
-    zk_bits = (zk_sign>0);
+zk = zk(length(timing)+1 : end);
 
 %zIk_hat = sign(zIk); 
 %zQk_hat = sign(zQk);
@@ -187,41 +178,19 @@ for n=[0:sN+length(w)-1]
 
 %zk = reshape([zbitI_hat; zbitQ_hat],2,length(zIk));
 
-k = 1;
+%k = 1;
 %zIk = [];
 %zQk = [];
-for s = 1:length(zIk)
-    z_k(k*2-1) = zIk(s); %odds
-    z_k(k*2) = zQk(s); %evens
-    k = k+1;
-end
+%for s = 1:length(zIk)
+%    z_k(k*2-1) = zIk(s); %odds
+%    z_k(k*2) = zQk(s); %evens
+%    k = k+1;
+%end
 
 %xk_should = zk(41:50);
 
 %xkI_should = xk_should(1:2:end);
 %xkQ_should = xk_should(2:2:end);
-
-%% Frame Recovery
-% remove when not doing phase recovery, too
-
-    [corr_frame, corr_tau_frame] = xcorr(pilot, zk_bits); %locking in on the frame
-    [corr_val, offset_frame] = max(abs(corr_frame)); %locked
-    tau_frame = abs(corr_tau_frame(offset_frame))+1;
-    
-    if corr_val > max_corr
-        max_corr = corr_val;
-        max_n = n;
-    end
-    
-end
-
-zIk = zI(sN+length(w)+max_n:fs*T_sym:end); 
-zQk = zQ(sN+length(w)+max_n:fs*T_sym:end); 
-
-zk = (zIk + j*zQk);
-
-zk_sign = sign(zk);
-zk_bits = (zk_sign>0);
 
 figure(12)
 LargeFigure(gcf, 0.15); % Make figure large
@@ -243,88 +212,60 @@ scatter(zIk,zQk)
 title('Bitspace of zk')
 linkaxes(zz,'x')
 
-%% --Frame Recovery-- %%
-% HA! YOU THOUGHT
-%zk_sign = sign(zk);
-%zk_bits = (zk_sign>0);
-%
-%if AWGN == 1
-%
-%    [corr_frame, corr_tau_frame] = xcorr(pilot, zk_bits); %locking in on the frame
-%    [~, offset_frame] = max(abs(corr_frame)); %locked
-%    tau_frame = abs(corr_tau_frame(offset_frame))+1;
-%    
-%    msg_start = tau_frame+length(pilot); %Pushes to be at start of message
-%    
-%    pilot_start = tau_frame%-(3*length(pilot)/2); %Aligns to Pilot start
-%    
-%    msg_eye = zk(msg_start:tau_frame-1); %Message found and located
-%    
-%    pilot_eye = zk(pilot_start:tau_frame-(length(pilot)/2)-1); %Should line-up to pilot end before msg
-%    
-%    zk_bits2 = zk_bits(msg_start:end);
-%    
-%    [corr_frame_end, corr_tau_frame_end] = xcorr(pilot, zk_bits2);
-%    [~, offset_end] = max(abs(corr_frame_end));
-%    tau_frame_end = abs(corr_tau_frame_end(offset_end)); %Determines end of msg
-%    
-%    zk_msg = zk(msg_start:msg_start+tau_frame_end-1); %comes out to zk(41:50)
-%    
-%    ho_hat = (pilot * pilot_eye') / (norm(pilot)^2);
-%
-%else 
-%    
-%    [corr_frame, corr_tau_frame] = xcorr(pilot, zk_bits); %locking in on frame for pilot end
-%    %
-%    [steve, offset_frame] = max(abs(int8(corr_frame))); %Searching for max value
-%    [nick, offset_frame2] = max(abs(int8(corr_frame(1:offset_frame-1)))); %Searching for a potentially earlier max value
-%    %
-%    if abs(nick)==abs(steve) %Checking to see if there is a max earlier than what it's returning
-%        offset_frame = offset_frame2;
-%    end
-%    %
-%    tau_frame = offset_frame;%abs(corr_tau_frame(offset_frame))+1; %END OF PILOT MESSAGE
-%    %
-%    %msg_start = tau_frame+length(pilot); %Pushes to be at start of message
-%    %
-%    %pilot_start = tau_frame-(3*length(pilot)/2); %Aligns to Pilot start
-%    %
-%    %msg_eye = zk(msg_start:tau_frame-1); %Message found and located?
-%    %
-%    %pilot_eye = zk(pilot_start:tau_frame-(length(pilot)/2)); %Should line-up to pilot end before msg
-%    %
-%    %zk_bits2 = zk_bits(msg_start:end);
-%    %
-%    %[corr_frame_end, corr_tau_frame_end] = xcorr(pilot, zk_bits2);
-%    %[~, offset_end] = max(abs(corr_frame_end));
-%    %tau_frame_end = abs(corr_tau_frame_end(offset_end)); %Determines end of msg
-%    %
-%    %zk_msg = zk(msg_start:msg_start+tau_frame_end-1); %comes out to zk(41:50)
-%    
-%    ho_hat = (pilot * pilot_eye') / (norm(pilot)^2);
-%
-%end
+figure(13)
+LargeFigure(gcf, 0.15); % Make figure large
+clf
+zz(3) = subplot(3,1,1);
+zoom on;
+plot(zI(length(timing)+951:end),'b') 
+hold on; 
+stem(upsample(real(zk),fs/F_sym),'r') 
+title('New Timing signal (zI) and sampled (zIk)')
+zz(4) = subplot(3,1,2);
+zoom on;
+plot(zQ(length(timing)+951:end),'b') 
+hold on; 
+stem(upsample(imag(zk),fs/F_sym),'r') 
+title('New Timing signal (zQ) and sampled (zQk)')
+subplot(3,1,3)
+scatter(real(zk),imag(zk))
+title('Bitspace of zk')
+linkaxes(zz,'x')
+
 %% --Equalization-- %%
 
-ho_hat = (w'*z_k)/(w'*pilot)
-
+complex_pilot = pilot(1:2:end) + j*pilot(2:2:end);
+zk_pilot = zk(1 : length(complex_pilot));
+zk_msg = zk(length(complex_pilot)+1 : msg_size/2);
+%ho_hat = (w'*kz(1:length(complex_pilot)))/(w'*complex_pilot)
+%ho_hat = (complex_pilot' .* kz(1:length(complex_pilot)))/(norm(complex_pilot)^2);
+ho_hat = dot(conj(complex_pilot),zk(1:length(complex_pilot)))/norm(complex_pilot)^2;
 
 %% Detect bits - One Tap Channel
 
-%zk_msg = zk(41:50);
-
 vk = zk_msg / ho_hat;
-
-vk1 = zk_bits / ho_hat;
 
 xk_hat = sign(vk);
 xk_hat = (xk_hat>0);
 xk_hat = reshape(xk_hat,1,length(xk_hat));
+%
+%vIk = vk(1:2:end);
+%vQk = vk(2:2:end);
 
-vIk = vk(1:2:end);
-vQk = vk(2:2:end);
+%v_k = vIk + j*vQk;
 
-v_k = vIk + j*vQk;
+figure(14)
+LargeFigure(gcf, 0.15); % Make figure large
+clf
+subplot(3,1,3)
+scatter(real(vk),imag(vk))
+title('Bitspace of vk')
+subplot(3,1,1)
+stem(real(vk),'b')
+title('vIk')
+subplot(3,1,2)
+stem(imag(vk),'r')
+title('vQk')
 
 %% --Additional chat with user-- %%
 pause(1);

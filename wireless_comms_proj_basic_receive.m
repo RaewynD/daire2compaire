@@ -12,8 +12,8 @@ rng('default');
 
 % Define User Values
 srrc = 1;
-real_time = 1;
-AWGN = 0;
+real_time = 0;
+AWGN = 1;
 
 %load transmitsignal.mat
 
@@ -181,16 +181,29 @@ set(gca,'fontsize', 15)
 %% --Sample filtered signal - starts falling apart here-- %%
 
 if srrc == 1
-    zIk = zI(-Ns+length(w):fs*T_sym:end); 
-    zQk = zQ(-Ns+length(w):fs*T_sym:end);
+    zIk_with_timing = zI(length(w):fs*T_sym:end); 
+    zQk_with_timing = zQ(length(w):fs*T_sym:end);
 else
-    zIk = zI(1:fs*T_sym:end); 
-    zQk = zQ(1:fs*T_sym:end);
+    zIk_with_timing = zI(1:fs*T_sym:end); 
+    zQk_with_timing = zQ(1:fs*T_sym:end);
 end
 
-zk = (zIk + j*zQk);
+zIk_with_timing_up = upsample(zIk_with_timing,fs/F_sym);
+zIk_with_timing_up_plot = [zeros(length(w)-1, 1); zIk_with_timing_up];
 
-zk = zk(length(timing)+1 : end);
+zQk_with_timing_up = upsample(zQk_with_timing,fs/F_sym);
+zQk_with_timing_up_plot = [zeros(length(w)-1, 1); zQk_with_timing_up];
+
+timingI_sent_plot = conv(w,real(timing_sent));
+timingQ_sent_plot = conv(w,imag(timing_sent));
+
+len_timingI = length(timingI_sent_plot) - length(w);
+zI_sans_timing = zI(len_timingI : end);
+zI_sans_timing_plot = [zeros(len_timingI-1, 1); zI_sans_timing];
+
+len_timingQ = length(timingQ_sent_plot) - length(w);
+zQ_sans_timing = zQ(len_timingQ : end);
+zQ_sans_timing_plot = [zeros(len_timingQ-1, 1); zQ_sans_timing];
 
 figure(12)
 LargeFigure(gcf, 0.15); % Make figure large
@@ -198,15 +211,19 @@ clf
 zz(1) = subplot(3,1,1);
 zoom on;
 plot(zI,'b') 
-hold on; 
-stem(upsample(zIk,fs/F_sym),'r') 
+hold on;
+stem(zIk_with_timing_up_plot,'r') 
+plot(timingI_sent_plot./10e11,'g')
+plot(zI_sans_timing_plot,'y')
 title('Post LPF signal (zI) and sampled (zIk)')
 set(gca,'fontsize', 15)
 zz(2) = subplot(3,1,2);
 zoom on;
 plot(zQ,'b') 
 hold on; 
-stem(upsample(zQk,fs/F_sym),'r') 
+stem(zQk_with_timing_up_plot,'r') 
+plot(timingQ_sent_plot./10e11,'g')
+plot(zQ_sans_timing_plot,'y')
 title('Post LPF signal (zQ) and sampled (zQk)')
 set(gca,'fontsize', 15)
 subplot(3,1,3)
@@ -220,19 +237,25 @@ title('Complexspace of zk')
 set(gca,'fontsize', 15)
 linkaxes(zz,'x')
 
+zk_with_timing = (zIk_with_timing + j*zQk_with_timing);
+
+zk = zk_with_timing(length(timing)+1 : end);
+zIk = real(zk);
+zQk = imag(zk);
+
 figure(13)
 LargeFigure(gcf, 0.15); % Make figure large
 clf
 zy(1) = subplot(3,1,1);
 zoom on;
-plot(zI(length(timing)+951:end),'b') 
+plot(zI,'b') 
 hold on; 
-stem(upsample(real(zk),fs/F_sym),'r') 
+stem(upsample(real(zk_with_timing),fs/F_sym),'r') 
 title('New Timing signal (zI) and sampled (zIk)')
 set(gca,'fontsize', 15)
 zy(2) = subplot(3,1,2);
 zoom on;
-plot(zQ(length(timing)+951:end),'b') 
+plot(zQ,'b') 
 hold on; 
 stem(upsample(imag(zk),fs/F_sym),'r') 
 title('New Timing signal (zQ) and sampled (zQk)')
@@ -251,6 +274,7 @@ linkaxes(zy,'x')
 
 zk_orig = zk;
 
+pilot = 2*pilot - 1;
 complex_pilot = pilot(1:2:end) + j*pilot(2:2:end);
 zk_pilot_end = length(complex_pilot);
 zk_msg_start = zk_pilot_end + 1;
@@ -275,6 +299,7 @@ for cnt = 1:num_msg
 
     %% Detect bits - One Tap Channel
 
+    vk_pilot = zk_pilot / ho_hat;
     vk = zk_msg / ho_hat;
     
     vIk = real(vk);
@@ -293,13 +318,17 @@ for cnt = 1:num_msg
     msg_hat = [msg_hat,xk_hat];
     vk_all = [vk_all;vk];
     
-    figure(14)
+    f = figure(14)
     if cnt == 1
         LargeFigure(gcf, 0.15); % Make figure large
         clf
     end
-    subplot(2,2,[1,2])
-    scatter(real(vk),imag(vk))
+    %cs = subplot(2,2,[1,2]);
+    cla(f);
+    scatter(real(vk),imag(vk));
+    hold on;
+    scatter(real(zk_pilot), imag(zk_pilot));
+    scatter(real(vk_pilot), imag(vk_pilot));
     box on;
     grid on;
     hold on;
@@ -307,18 +336,18 @@ for cnt = 1:num_msg
     line(xlim, [0 0])
     title('Complexspace of vk post equalization')
     set(gca,'fontsize', 15)
-    subplot(2,2,[3,4])
-    stem(real(vk_all),'b')
-    box on;
-    grid on;
-    hold on;
+    %subplot(2,2,[3,4])
+    %stem(real(vk_all),'b')
+    %box on;
+    %grid on;
+    %hold on;
     %title('vIk')
     %subplot(3,1,2)
-    stem(imag(vk_all),'r')
-    legend('vIk','vQk')
-    title('All of vk')
+    %stem(imag(vk_all),'r')
+    %legend('vIk','vQk')
+    %title('All of vk')
     %title('vQk')
-    %pause(0.125);
+    %pause(0.5);
     %pause();
     
     %figure(15)

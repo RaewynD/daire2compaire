@@ -23,6 +23,8 @@ timing_preamble = 50;
 pilot_size = 20;
 msg_size = 160;
 
+pwr = 1;
+
 d = 1;
 
 fs = 200e6; %sampling
@@ -134,10 +136,12 @@ pilot_plot_Q = conv(pilot_plot_Q, p);
 %% transmit complex symbols
 transmitsignal = (xI + j*xQ);
 transmitsignal = transmitsignal/max(abs(transmitsignal));
+transmitsignal = transmitsignal*pwr;
 transmitsignal = reshape(transmitsignal, [], 1);
 
 pilot_plot = (pilot_plot_I + j*pilot_plot_Q);
 pilot_plot = pilot_plot/max(abs(pilot_plot));
+pilot_plot = pilot_plot*pwr;
 pilot_plot = reshape(pilot_plot, [], 1);
 
 save('transmitsignal.mat','transmitsignal')

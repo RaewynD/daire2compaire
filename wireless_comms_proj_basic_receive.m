@@ -12,8 +12,8 @@ rng('default');
 
 % Define User Values
 srrc = 1;
-real_time = 1;
-AWGN = 0;
+real_time = 0;
+AWGN = 1;
 
 %load transmitsignal.mat
 
@@ -37,7 +37,7 @@ if AWGN == 1
     E_x = d^2/(6*(M-1)); % Calculate the Symbol Energy
     SNR_mfb_dB = 10^(SNR_mfb_dB/10); % Calculate the SNR
     sigma = sqrt(E_x/SNR_mfb_dB); % Calculate the STD Dev
-    receivedsignal = exp(j*pi/3)*transmitsignal + sigma/sqrt(2)*(randn(size(transmitsignal))+j*randn(size(transmitsignal)));
+    receivedsignal = transmitsignal + sigma/sqrt(2)*(randn(size(transmitsignal))+j*randn(size(transmitsignal)));
 end
 
 load global_vars
@@ -266,6 +266,7 @@ for cnt = 1:num_msg
     zk_pilot = zk(1 : zk_pilot_end);
     zk_msg = zk(zk_msg_start : zk_msg_end);
     zk = zk(zk_start : end);
+    disp(['The size of zk is: ' num2str(size(zk))])
     
     %ho_hat = (w'*kz(1:length(complex_pilot)))/(w'*complex_pilot)
     %ho_hat = (complex_pilot' .* kz(1:length(complex_pilot)))/(norm(complex_pilot)^2);
@@ -365,8 +366,8 @@ imshow(reshape(bits,imdim))
 title('Desired Image')
 set(gca,'fontsize', 15)
 subplot(1,2,2)
-imshow(reshape(msg_hat(1:imdim(1)*imdim(2)),imdim))
-title('What is good mayne? [Rohit Attempt]')
+imshow(reshape(msg_hat_img,imdim))
+title('What is good mayne?')
 set(gca,'fontsize', 15)
 
 %figure(15)
@@ -375,8 +376,8 @@ set(gca,'fontsize', 15)
 pause(1);
 disp(' ')
 disp('Thanks for waiting. Here is what I have.')
-disp(' ')
-disp(['Was this your message?: ' num2str(xk_hat)])
+%disp(' ')
+%disp(['Was this your message?: ' num2str(xk_hat)])
 %disp(' ')
 
 %% -- BER Calculation-- %%

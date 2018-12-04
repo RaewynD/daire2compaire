@@ -14,6 +14,7 @@ rng('default');
 srrc = 1;
 real_time = 0;
 AWGN = 1;
+rot = 3*pi/2;
 
 %load transmitsignal.mat
 
@@ -227,7 +228,7 @@ plot(zQ_sans_timing_plot,'y')
 title('Post LPF signal (zQ) and sampled (zQk)')
 set(gca,'fontsize', 15)
 subplot(3,1,3)
-scatter(zIk,zQk)
+scatter(zIk_with_timing,zQk_with_timing)
 box on;
 grid on;
 hold on;
@@ -237,27 +238,29 @@ title('Complexspace of zk')
 set(gca,'fontsize', 15)
 linkaxes(zz,'x')
 
-zk_with_timing = (zIk_with_timing + j*zQk_with_timing);
+zIk_sans_timing = zIk_with_timing(length(timing)/2 + 1 : end);
+zQk_sans_timing = zQk_with_timing(length(timing)/2 + 1: end);
 
-zk = zk_with_timing(length(timing)+1 : end);
-zIk = real(zk);
-zQk = imag(zk);
+zk = zIk_sans_timing + j * zQk_sans_timing;
+
+zIk_sans_timing_up = upsample(zIk_sans_timing,fs/F_sym);
+zQk_sans_timing_up = upsample(zQk_sans_timing,fs/F_sym);
 
 figure(13)
 LargeFigure(gcf, 0.15); % Make figure large
 clf
 zy(1) = subplot(3,1,1);
 zoom on;
-plot(zI,'b') 
+plot(zI_sans_timing,'b') 
 hold on; 
-stem(upsample(real(zk_with_timing),fs/F_sym),'r') 
+stem(zIk_sans_timing_up,'r') 
 title('New Timing signal (zI) and sampled (zIk)')
 set(gca,'fontsize', 15)
 zy(2) = subplot(3,1,2);
 zoom on;
 plot(zQ,'b') 
 hold on; 
-stem(upsample(imag(zk),fs/F_sym),'r') 
+stem(zQk_sans_timing_up,'r') 
 title('New Timing signal (zQ) and sampled (zQk)')
 set(gca,'fontsize', 15)
 subplot(3,1,3)
@@ -276,6 +279,7 @@ zk_orig = zk;
 
 pilot = 2*pilot - 1;
 complex_pilot = pilot(1:2:end) + j*pilot(2:2:end);
+
 zk_pilot_end = length(complex_pilot);
 zk_msg_start = zk_pilot_end + 1;
 zk_msg_end = zk_msg_start + msg_size/2 - 1; %msg_size is in bit space
@@ -284,6 +288,9 @@ zk_start = zk_msg_end + 1;
 msg_hat = [];
 ho_hat_pops = [];
 vk_all = [];
+msg_hat_rot = [];
+ho_hat_pops = [];
+vk_all_rot = [];
 
 
 for cnt = 1:num_msg
@@ -301,30 +308,40 @@ for cnt = 1:num_msg
 
     vk_pilot = zk_pilot / ho_hat;
     vk = zk_msg / ho_hat;
+    vk_rot = vk * exp(j*(rot));
     
     vIk = real(vk);
     vQk = imag(vk);
+    vIk_rot = real(vk_rot);
+    vQk_rot = imag(vk_rot);
     
     vk_bits = [];
+    vk_bits_rot = [];
     
     for x = 1:length(vIk)
         vk_bits = [vk_bits,vIk(x),vQk(x)];
+        vk_bits_rot = [vk_bits_rot,vIk_rot(x),vQk_rot(x)];
     end
     
     xk_hat = sign(vk_bits);
     xk_hat = (xk_hat>0);
     xk_hat = reshape(xk_hat,1,length(xk_hat));
+    xk_hat_rot = sign(vk_bits_rot);
+    xk_hat_rot = (xk_hat_rot>0);
+    xk_hat_rot = reshape(xk_hat_rot,1,length(xk_hat_rot));
     
     msg_hat = [msg_hat,xk_hat];
     vk_all = [vk_all;vk];
+    msg_hat_rot = [msg_hat_rot,xk_hat_rot];
+    vk_all_rot = [vk_all;vk_rot];
     
-    f = figure(14)
+    figure(14)
     if cnt == 1
         LargeFigure(gcf, 0.15); % Make figure large
         clf
     end
-    %cs = subplot(2,2,[1,2]);
-    cla(f);
+    cs = subplot(2,2,[1,2]);
+    %cla(cs);
     scatter(real(vk),imag(vk));
     hold on;
     scatter(real(zk_pilot), imag(zk_pilot));
@@ -336,17 +353,17 @@ for cnt = 1:num_msg
     line(xlim, [0 0])
     title('Complexspace of vk post equalization')
     set(gca,'fontsize', 15)
-    %subplot(2,2,[3,4])
-    %stem(real(vk_all),'b')
-    %box on;
-    %grid on;
-    %hold on;
+    subplot(2,2,[3,4])
+    stem(real(vk_all),'b')
+    box on;
+    grid on;
+    hold on;
     %title('vIk')
-    %subplot(3,1,2)
-    %stem(imag(vk_all),'r')
+    %subplot(2,2,[)
+    stem(imag(vk_all),'r')
     %legend('vIk','vQk')
-    %title('All of vk')
-    %title('vQk')
+    title('All of vk')
+    title('vQk')
     %pause(0.5);
     %pause();
     
@@ -386,6 +403,7 @@ length(msg_hat)
 msg_size
 img_size = imdim(1)*imdim(2)
 msg_hat_img = msg_hat(1:img_size);
+msg_hat_img_rot = msg_hat_rot(1:img_size);
 
 figure(16)
 LargeFigure(gcf, 0.15); % Make figure large
@@ -395,7 +413,7 @@ imshow(reshape(bits,imdim))
 title('Desired Image')
 set(gca,'fontsize', 15)
 subplot(1,2,2)
-imshow(reshape(msg_hat_img,imdim))
+imshow(reshape(msg_hat_img_rot,imdim))
 title('What is good mayne?')
 set(gca,'fontsize', 15)
 

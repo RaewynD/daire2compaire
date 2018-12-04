@@ -154,6 +154,19 @@ set(gca,'fontsize', 15)
 yI = real(y_received_timing);
 yQ = imag(y_received_timing);
 
+x = tau_time:length(y_received);x=x';
+figure(20); 
+LargeFigure(gcf, 0.15); % Make figure large
+clf
+plot(real(y_received),'b'); 
+hold on;
+plot(imag(y_received),'r');
+plot(x,yI,'g');
+plot(x,yQ,'y');
+zoom on;
+title('Overlay of Y_received and Y_correlated')
+set(gca,'fontsize', 15)
+
 %% --Filter low pass signals with matched filter in each arm-- %%
 
 % '1/fs' simply serves as 'delta' to approximate integral as sum
@@ -167,7 +180,7 @@ subplot(2,1,1)
 plot(zI,'b')
 hold on;
 plot(zQ,'r')
-title('Post LPF Signal')
+title('Post LPF')
 set(gca,'fontsize', 15)
 subplot(2,1,2)
 scatter(zI,zQ)

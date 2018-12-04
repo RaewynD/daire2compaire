@@ -259,32 +259,32 @@ zk = zIk_sans_timing + j * zQk_sans_timing;
 zIk_sans_timing_up = upsample(zIk_sans_timing,fs/F_sym);
 zQk_sans_timing_up = upsample(zQk_sans_timing,fs/F_sym);
 
-figure(13)
-LargeFigure(gcf, 0.15); % Make figure large
-clf
-zy(1) = subplot(3,1,1);
-zoom on;
-plot(zI_sans_timing,'b') 
-hold on; 
-stem(zIk_sans_timing_up,'r') 
-title('New Timing signal (zI) and sampled (zIk)')
-set(gca,'fontsize', 15)
-zy(2) = subplot(3,1,2);
-zoom on;
-plot(zQ,'b') 
-hold on; 
-stem(zQk_sans_timing_up,'r') 
-title('New Timing signal (zQ) and sampled (zQk)')
-set(gca,'fontsize', 15)
-subplot(3,1,3)
-scatter(real(zk),imag(zk))
-box on;
-grid on;
-line([0 0], ylim)
-line(xlim, [0 0])
-title('Complexspace of zk')
-set(gca,'fontsize', 15)
-linkaxes(zy,'x')
+% figure(13)
+% LargeFigure(gcf, 0.15); % Make figure large
+% clf
+% zy(1) = subplot(3,1,1);
+% zoom on;
+% plot(zI_sans_timing,'b') 
+% hold on; 
+% stem(zIk_sans_timing_up,'r') 
+% title('New Timing signal (zI) and sampled (zIk)')
+% set(gca,'fontsize', 15)
+% zy(2) = subplot(3,1,2);
+% zoom on;
+% plot(zQ,'b') 
+% hold on; 
+% stem(zQk_sans_timing_up,'r') 
+% title('New Timing signal (zQ) and sampled (zQk)')
+% set(gca,'fontsize', 15)
+% subplot(3,1,3)
+% scatter(real(zk),imag(zk))
+% box on;
+% grid on;
+% line([0 0], ylim)
+% line(xlim, [0 0])
+% title('Complexspace of zk')
+% set(gca,'fontsize', 15)
+% linkaxes(zy,'x')
 
 %% --Equalization-- %%
 
@@ -304,6 +304,9 @@ msg_hat_rot = [];
 ho_hat_pops = [];
 vk_all_rot = [];
 
+figure(14)
+LargeFigure(gcf, 0.15); % Make figure large
+clf
 
 for cnt = 1:num_msg
     zk_pilot = zk(1 : zk_pilot_end);
@@ -348,12 +351,7 @@ for cnt = 1:num_msg
     vk_all_rot = [vk_all;vk_rot];
     
     figure(14)
-    if cnt == 1
-        LargeFigure(gcf, 0.15); % Make figure large
-        clf
-    end
     cs = subplot(2,2,[1,2]);
-    %cla(cs);
     scatter(real(vk),imag(vk));
     hold on;
     scatter(real(zk_pilot), imag(zk_pilot));
@@ -365,51 +363,22 @@ for cnt = 1:num_msg
     line(xlim, [0 0])
     title('Complexspace of vk post equalization')
     set(gca,'fontsize', 15)
-    subplot(2,2,[3,4])
-    stem(real(vk_all),'b')
-    box on;
-    grid on;
-    hold on;
-    %title('vIk')
-    %subplot(2,2,[)
-    stem(imag(vk_all),'r')
-    %legend('vIk','vQk')
-    title('All of vk')
-    title('vQk')
-    %pause(0.5);
-    %pause();
     
-    %figure(15)
-    %if cnt == 1
-    %    LargeFigure(gcf, 0.15); % Make figure large
-    %    clf
-    %end
-    %subplot(2,1,1)
-    %stem(real(complex_pilot),'b')
-    %hold on;
-    %stem(real(zk_pilot/ho_hat),'r')
-    %legend('Complex Pilot','Sampled pilot')
-    %box on;
-    %grid on;
-    %title('Real Pilot Competition')
-    %set(gca,'fontsize', 15)
-    %hold off;
-    %subplot(2,1,2)
-    %stem(imag(complex_pilot),'b')
-    %hold on;
-    %stem(imag(zk_pilot/ho_hat),'r')
-    %legend('Complex Pilot','Sampled pilot')
-    %box on;
-    %grid on;
-    %title('Imaginary Pilot Competition')
-    %set(gca,'fontsize', 15)
-    %hold off;
-    %pause(0.125);
-    %pause();
-
 end
 
+figure(14)
+subplot(2,2,[3,4])
+stem(real(vk_all),'b')
+box on;
+grid on;
+hold on;
+stem(imag(vk_all),'r')
+legend('vIk','vQk')
+title('All of vk')
+
 pause();
+
+%% Display Images
 
 length(msg_hat)
 msg_size
@@ -417,6 +386,33 @@ img_size = imdim(1)*imdim(2)
 msg_hat_img = msg_hat(1:img_size);
 msg_hat_img_rot = msg_hat_rot(1:img_size);
 
+length(msg_hat)
+msg_size
+img_size = imdim(1)*imdim(2)
+msg_hat_img = msg_hat(1:img_size);
+msg_hat_img_rot = msg_hat_rot(1:img_size);
+
+bits_err = reshape(bits,imdim);
+msg_hat_err = reshape(msg_hat_img_rot,imdim);
+
+
+error_img = zeros(imdim(1),imdim(2),3);
+
+for x = 1:imdim(1)
+    for y = 1:imdim(2)
+        if bits_err(x,y) ~= msg_hat_err(x,y)
+            error_img(x,y,1) = 1;
+            error_img(x,y,2) = 0;
+            error_img(x,y,3) = 0;
+        else
+            if msg_hat_err(x,y) == 1
+                error_img(x,y,1) = 1;
+                error_img(x,y,2) = 1;
+                error_img(x,y,3) = 1;
+            end
+        end
+    end
+end
 
 %% --Additional chat with user-- %%
 pause(1);
@@ -453,12 +449,15 @@ imshow(reshape(msg_hat_img,imdim))
 title('Received Image')
 xlabel(['BER is: ' num2str(BER)])
 set(gca,'fontsize', 15)
-subplot(1,3,2)
 subplot(1,3,3)
-imshow(reshape(msg_hat_img_rot,imdim))
+imshow(error_img)
 title('Rotated Image')
 xlabel(['BER is: ' num2str(BER_rot)])
 set(gca,'fontsize', 15)
+
+pause();
+
+close all
 
 %% --Define Constellation-- %%
 qam_range = 1:sqrt(qam);

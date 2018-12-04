@@ -352,7 +352,10 @@ end
 
 pause();
 
-msg_hat_img = msg_hat(1:imdim(1)*imdim(2));
+length(msg_hat)
+msg_size
+img_size = imdim(1)*imdim(2)
+msg_hat_img = msg_hat(1:img_size);
 
 figure(16)
 LargeFigure(gcf, 0.15); % Make figure large

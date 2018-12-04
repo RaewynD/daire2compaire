@@ -21,7 +21,7 @@ showplot = 1;
 freq_preamble = 300;
 timing_preamble = 50;
 pilot_size = 20;
-msg_size = 150;
+msg_size = 160;
 
 d = 1;
 
@@ -86,7 +86,7 @@ len = length(msg);
 imrecon = reshape(bits,imdim);
 
 % make sure msg is factor of message_size
-to_add = zeros(1,mod(len, msg_size));
+to_add = zeros(1, msg_size - mod(len, msg_size));
 msg = [msg,to_add];
 
 num_msg = length(msg)/msg_size;

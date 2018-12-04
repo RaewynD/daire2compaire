@@ -12,8 +12,8 @@ rng('default');
 
 % Define User Values
 srrc = 1;
-real_time = 0;
-AWGN = 1;
+real_time = 1;
+AWGN = 0;
 
 %load transmitsignal.mat
 
@@ -253,9 +253,9 @@ zk_orig = zk;
 
 complex_pilot = pilot(1:2:end) + j*pilot(2:2:end);
 zk_pilot_end = length(complex_pilot);
-zk_msg_start = length(complex_pilot) + 1;
-zk_msg_end = length(complex_pilot)+1 + msg_size/2; %msg_size is in bit space
-zk_start = length(complex_pilot)+1 + msg_size/2 + 1;
+zk_msg_start = zk_pilot_end + 1;
+zk_msg_end = zk_msg_start + msg_size/2 - 1; %msg_size is in bit space
+zk_start = zk_msg_end + 1;
 
 msg_hat = [];
 ho_hat_pops = [];

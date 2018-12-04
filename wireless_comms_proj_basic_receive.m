@@ -299,7 +299,6 @@ zk_msg_end = zk_msg_start + msg_size/2 - 1; %msg_size is in bit space
 zk_start = zk_msg_end + 1;
 
 msg_hat = [];
-ho_hat_pops = [];
 vk_all = [];
 msg_hat_rot = [];
 ho_hat_pops = [];
@@ -418,24 +417,6 @@ img_size = imdim(1)*imdim(2)
 msg_hat_img = msg_hat(1:img_size);
 msg_hat_img_rot = msg_hat_rot(1:img_size);
 
-figure(16)
-LargeFigure(gcf, 0.15); % Make figure large
-clf
-subplot(1,3,1)
-imshow(reshape(bits,imdim))
-title('Desired Image')
-set(gca,'fontsize', 15)
-subplot(1,3,2)
-imshow(reshape(msg_hat_img,imdim))
-title('Received Image')
-set(gca,'fontsize', 15)
-subplot(1,3,2)
-subplot(1,3,3)
-imshow(reshape(msg_hat_img_rot,imdim))
-title('Rotated Image')
-set(gca,'fontsize', 15)
-
-%figure(15)
 
 %% --Additional chat with user-- %%
 pause(1);
@@ -459,6 +440,25 @@ disp(' ')
 %Maybe figure out how to write the text outputs onto the graph?
 %Also figure out how to graph the locations of the pilots and messages in
 %the large zk graph
+
+figure(16)
+LargeFigure(gcf, 0.15); % Make figure large
+clf
+subplot(1,3,1)
+imshow(reshape(bits,imdim))
+title('Desired Image')
+set(gca,'fontsize', 15)
+subplot(1,3,2)
+imshow(reshape(msg_hat_img,imdim))
+title('Received Image')
+xlabel(['BER is: ' num2str(BER)])
+set(gca,'fontsize', 15)
+subplot(1,3,2)
+subplot(1,3,3)
+imshow(reshape(msg_hat_img_rot,imdim))
+title('Rotated Image')
+xlabel(['BER is: ' num2str(BER_rot)])
+set(gca,'fontsize', 15)
 
 %% --Define Constellation-- %%
 qam_range = 1:sqrt(qam);

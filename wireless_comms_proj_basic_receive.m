@@ -12,8 +12,8 @@ rng('default');
 
 % Define User Values
 srrc = 1;
-real_time = 0;
-AWGN = 1;
+real_time = 1;
+AWGN = 0;
 rot = 3*pi/2;
 
 %load transmitsignal.mat
@@ -421,7 +421,7 @@ msg_hat_img_rot = msg_hat_rot(1:img_size);
 figure(16)
 LargeFigure(gcf, 0.15); % Make figure large
 clf
-subplot(1,2,1)
+subplot(1,3,1)
 imshow(reshape(bits,imdim))
 title('Desired Image')
 set(gca,'fontsize', 15)
@@ -450,6 +450,10 @@ disp('Thanks for waiting. Here is what I have.')
 BER = mean(msg_hat_img ~= bits);
 disp(' ')
 disp(['Your BER is: ' num2str(BER)])
+disp(' ')
+
+BER_rot = mean(msg_hat_img_rot ~= bits);
+disp(['Your BER_rot is: ' num2str(BER_rot)])
 disp(' ')
 
 %Maybe figure out how to write the text outputs onto the graph?

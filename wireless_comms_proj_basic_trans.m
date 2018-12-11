@@ -7,7 +7,7 @@
 %% --Main Transmit Code-- %%
 
 clear
-%close all
+close all
 %clc
 % Set seed for random number generator (for repeatability of simulation)
 rng('default');
@@ -73,9 +73,6 @@ end
 
 % should be same as symLen
 lenp = length(p);
-
-%figure(1)
-%plot([1:lenp]/fs,p)
 
 %% Define binary transmission
 freq = get_bits(0);
@@ -206,7 +203,6 @@ if showplot == 1
     xlabel('Frequency in 1/samples')
     title('Frequency Response of Transmitted Signal')
     set(gca,'fontsize', 15)
-    %linkaxes(ax,'x')
     zoom on
     h(5) = subplot(3,2,5);
     imshow(imrecon)

@@ -162,10 +162,10 @@ transmitsignal1 = transmitsignal*pwr;
 rand2 = ceil(rand([1,1])*delay_size)*2;
 transmitsignal2 = [zeros(rand2,1); transmitsignal]*pwr*0.9;
 
-rand3 = ceil(rand([1,1])*delay_size)*2 + delay_size;
+rand3 = ceil(rand([1,1])*delay_size)*2 + delay_size*2;
 transmitsignal3 = [zeros(rand3,1); transmitsignal]*pwr*0.8;
 
-rand4 = ceil(rand([1,1])*delay_size)*2 + (delay_size*2);
+rand4 = ceil(rand([1,1])*delay_size)*2 + (delay_size*4);
 transmitsignal4 = [zeros(rand4,1); transmitsignal]*pwr*0.7;
 
 transmitsignal = [transmitsignal1; transmitsignal2; transmitsignal3; transmitsignal4];
@@ -227,7 +227,9 @@ if showplot == 1
     set(gca,'fontsize', 15)
     %%% please add this as a plot
     
+    figure(3)
     plot(real(transmitsignal1),'Color',[0,0,0.7])
+    hold on
     plot(imag(transmitsignal1),'Color',[0,0,0.5])
     plot(real(transmitsignal2),'Color',[0,0.7,0])
     plot(imag(transmitsignal2),'Color',[0,0.5,0])
@@ -236,6 +238,8 @@ if showplot == 1
     plot(real(transmitsignal4),'Color',[0,0.7,0.7])
     plot(imag(transmitsignal4),'Color',[0,0.5,0.5])
     
+    figure(1)
+    hold on
     h(2) = subplot(3,2,2);
     plot([-lenp/2+1:lenp/2]/lenp*fs,20*log10(abs(fftshift(1/sqrt(lenp)*fft(p)))))
     ylabel('$|P^{transmit}(f)|$')

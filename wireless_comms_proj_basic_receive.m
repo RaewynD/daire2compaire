@@ -6,7 +6,7 @@
 %% --Main Receive Code-- %%
 
 clear
-%close all
+close all
 %clc
 rng('default');
 
@@ -407,7 +407,7 @@ for cnt = 1:num_msg
     zk_pilot = zk(1 : zk_pilot_end);
     zk_msg = zk(zk_msg_start : zk_msg_end);
     zk = zk(zk_start : end);
-    disp(['The size of zk is: ' num2str(size(zk))])
+    disp(['The size of zk is: ' num2str(size(zk))]);
     
     ho_hat = dot(conj(complex_pilot),zk_pilot)/norm(complex_pilot)^2;
     ho_hat_pops = [ho_hat_pops,ho_hat];
@@ -441,7 +441,7 @@ for cnt = 1:num_msg
     msg_hat = [msg_hat,xk_hat];
     vk_all = [vk_all;vk];
     msg_hat_rot = [msg_hat_rot,xk_hat_rot];
-    vk_all_rot = [vk_all;vk_rot];
+    vk_all_rot = [vk_all_rot;vk_rot];
     
     if graph == 1
         
@@ -500,9 +500,9 @@ end
 
 %% Display Images
 
-length(msg_hat)
-msg_size
-img_size = imdim(1)*imdim(2)
+length(msg_hat);
+msg_size;
+img_size = imdim(1)*imdim(2);
 msg_hat_img = msg_hat(1:img_size);
 msg_hat_img_rot = msg_hat_rot(1:img_size);
 
@@ -595,7 +595,7 @@ if graph == 1
     set(gca,'DataAspectRatio',[1 1 1])
     grid on;
     hold on;
-    D = max(D, max(abs(vk_bits))+1);
+    D = max(D, max(abs(vk_bits_rot))+1);
     axis([-D D -D D])
     plot([-D:D/100:D],zeros(size([-D:D/100:D])),'k','LineWidth',2)
     plot(zeros(size([-D:D/100:D])),[-D:D/100:D],'k','LineWidth',2)
@@ -604,9 +604,10 @@ if graph == 1
     ylabel('$x^{Q}$, $z^{Q}$')
 
     title('Constellation Plot')
-    plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
+    %plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
     for ii=1:length(vk_all)
-        plot(vk_all(ii),'bx')
+        plot(vk_all(ii),'cx')
+        plot(vk_all_rot(ii),'bx')
         plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
         if (rem(ii,100)==0)
             pause(.00002)

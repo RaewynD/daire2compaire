@@ -22,7 +22,7 @@ freq_preamble = 300;
 timing_preamble = 100;
 pilot_size = 20;
 msg_size = 160;
-delay_size = 10;
+delay_size = 50;
 trellis = 0;
 
 pwr = .1;
@@ -157,18 +157,19 @@ pilot_plot_Q = conv(pilot_plot_Q, p);
 transmitsignal = (xI + j*xQ);
 transmitsignal = transmitsignal/max(abs(transmitsignal));
 
-transmitsignal1 = transmitsignal*pwr;
-
 rand2 = ceil(rand([1,1])*delay_size)*2;
-transmitsignal2 = [zeros(rand2,1); transmitsignal]*pwr*0.9;
-
 rand3 = ceil(rand([1,1])*delay_size)*2 + delay_size*2;
-transmitsignal3 = [zeros(rand3,1); transmitsignal]*pwr*0.8;
-
 rand4 = ceil(rand([1,1])*delay_size)*2 + (delay_size*4);
-transmitsignal4 = [zeros(rand4,1); transmitsignal]*pwr*0.7;
 
-transmitsignal = [transmitsignal1; transmitsignal2; transmitsignal3; transmitsignal4];
+transmitsignal1 = [transmitsignal; zeros(rand4,1)]*pwr;
+
+transmitsignal2 = [zeros(rand2,1); transmitsignal; zeros(rand4-rand2,1)]*pwr*0.95;
+
+transmitsignal3 = [zeros(rand3,1); transmitsignal; zeros(rand4-rand3,1)]*pwr*0.9;
+
+transmitsignal4 = [zeros(rand4,1); transmitsignal]*pwr*0.85;
+
+transmitsignal = (transmitsignal1 + transmitsignal2 + transmitsignal3 + transmitsignal4)/4;
 
 transmitsignal = reshape(transmitsignal, [], 1);
 

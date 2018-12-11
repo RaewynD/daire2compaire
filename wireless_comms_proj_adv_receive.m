@@ -19,7 +19,6 @@ noise = -15;
 freq_est_start = 5000;
 freq_est_end = freq_est_start+1000;
 trellis = 0;
-signals = 3;
 
 %load transmitsignal.mat
 
@@ -33,16 +32,7 @@ else
 end
 
 if real_time == 1
-    load receivedsignal1.mat
-    receivedsignal1 = receivedsignal;
-    load receivedsignal2.mat
-    receivedsignal2 = receivedsignal;
-    load receivedsignal3.mat
-    receivedsignal3 = receivedsignal;
-    if (signals == 4)
-        load receivedsignal4.mat
-        receivedsignal4 = receivedsignal;
-    end
+    load receivedsignal.mat
 end
 
 if AWGN == 1
@@ -52,16 +42,8 @@ if AWGN == 1
     E_x = d^2/(6*(M-1)); % Calculate the Symbol Energy
     SNR_mfb_dB = 10^(SNR_mfb_dB/10); % Calculate the SNR
     sigma = sqrt(E_x/SNR_mfb_dB); % Calculate the STD Dev
-    trans1 = [randn(floor(randn(1)*10),1);transmitsignal];
-    receivedsignal1 = trans1 + sigma/sqrt(2)*(randn(size(trans1))+j*randn(size(trans1)));
-    trans2 = [randn(floor(randn(1)*10),1);transmitsignal];
-    receivedsignal2 = trans2 + sigma/sqrt(2)*(randn(size(trans2))+j*randn(size(trans2)));
-    trans3 = [randn(floor(randn(1)*10),1);transmitsignal];
-    receivedsignal3 = trans3 + sigma/sqrt(2)*(randn(size(trans3))+j*randn(size(trans3)));
-    if (signals == 4)
-        trans4 = [randn(floor(randn(1)*10),1);transmitsignal];
-        receivedsignal4 = trans4 + sigma/sqrt(2)*(randn(size(trans4))+j*randn(size(trans4)));
-    end
+    trans = [randn(floor(randn(1)*10),1);transmitsignal];
+    receivedsignal = trans + sigma/sqrt(2)*(randn(size(trans))+j*randn(size(trans)));
 end
 
 load global_vars
@@ -74,14 +56,8 @@ L = length(msg);
 % Matched filter
 w = flipud(p);
 
-y_received1 = receivedsignal1;
-y_received2 = receivedsignal2;
-y_received3 = receivedsignal3;
-if (signals == 4)
-    y_received4 = receivedsignal4;
-end
-
 x_transmitted = transmitsignal;
+y_received = receivedsignal;
 
 graph = 0;
 
@@ -104,18 +80,11 @@ title('Transmitted Signal')
 set(gca,'fontsize', 15)
 
 s1(2) = subplot(3,1,3)
-plot(real(y_received1),'Color',[0,0,0.7])
-hold on;
-plot(imag(y_received1),'Color',[0,0,0.5])
-plot(real(y_received2),'Color',[0,0.7,0])
-plot(imag(y_received2),'Color',[0,0.5,0])
-plot(real(y_received3),'Color',[0.7,0,0])
-plot(imag(y_received3),'Color',[0.5,0,0])
-if (signals == 4)
-    plot(real(y_received4),'Color',[0,0.7,0.7])
-    plot(imag(y_received3),'Color',[0,0.5,0.5])
-end
-title('Received Signals')
+plot(real(y_received),'Color',[0,0,0.7])
+hold on
+plot(imag(y_received),'Color',[0,0,0.5])
+
+title('Received Signal')
 set(gca,'fontsize', 15)
 
 %linkaxes(s1,'x');
@@ -139,43 +108,18 @@ set(gca,'fontsize', 15)
 
 figure(1)
 hold on;
-freq_est1 = y_received1(freq_est_start : freq_est_end);
-freq_dom1 = abs(fftshift(fft(freq_est1)));
-plot([0:length(freq_est1)-1]/length(freq_est1)-0.5, freq_dom1, 'b')
-freq_est2 = y_received2(freq_est_start : freq_est_end);
-freq_dom2 = abs(fftshift(fft(freq_est2)));
-plot([0:length(freq_est2)-1]/length(freq_est2)-0.5, freq_dom2, 'r')
-freq_est3 = y_received2(freq_est_start : freq_est_end);
-freq_dom3 = abs(fftshift(fft(freq_est3)));
-plot([0:length(freq_est3)-1]/length(freq_est3)-0.5, freq_dom3, 'g')
-freq_est4 = y_received2(freq_est_start : freq_est_end);
-if (signals == 4)
-    freq_dom4 = abs(fftshift(fft(freq_est4)));
-    plot([0:length(freq_est4)-1]/length(freq_est4)-0.5, freq_dom4, 'y')
-end
-title('Frequencies');
+freq_est = y_received(freq_est_start : freq_est_end);
+freq_dom = abs(fftshift(fft(freq_est)));
+plot([0:length(freq_est)-1]/length(freq_est)-0.5, freq_dom, 'b')
+
+title('Frequency');
 set(gca,'fontsize',15);
 
-[~, freq1] = max(freq_dom1);
-[~, freq2] = max(freq_dom2);
-[~, freq3] = max(freq_dom3);
-if (signals == 4)
-    [~, freq4] = max(freq_dom4);
-end
+[~, freq] = max(freq_dom);
 
-delta_hat1 = (1/Ts) * freq1;
-delta_hat2 = (1/Ts) * freq2;
-delta_hat3 = (1/Ts) * freq3;
-    if (signals == 4)
-delta_hat4 = (1/Ts) * freq4;
-    end
+delta_hat = (1/Ts) * freq;
 
-y_received1 = exp(-j*2*pi*delta_hat1*Ts) * y_received1;
-y_received2 = exp(-j*2*pi*delta_hat2*Ts) * y_received2;
-y_received3 = exp(-j*2*pi*delta_hat3*Ts) * y_received3;
-    if (signals == 4)
-y_received4 = exp(-j*2*pi*delta_hat4*Ts) * y_received4;
-    end
+y_received = exp(-j*2*pi*delta_hat1*Ts) * y_received;
 
 %% --Apply Timing Recovery-- %%
 
@@ -200,39 +144,12 @@ tau_time1 = abs(corr_tau_time1(offset_time1))+1;
 
 y_received_timing1 = y_received1(tau_time1:end);
 
-[corr_time2, corr_tau_time2] = xcorr(timing_sent, y_received2);
-[~, offset_time2] = max(abs(corr_time2))
-tau_time2 = abs(corr_tau_time2(offset_time2))+1;
-% tau are the actual offsets
-% corr tau = offsets of correlations
 
-y_received_timing2 = y_received2(tau_time2:end);
 
-[corr_time3, corr_tau_time3] = xcorr(timing_sent, y_received3);
-[~, offset_time3] = max(abs(corr_time3))
-tau_time3 = abs(corr_tau_time3(offset_time3))+1;
-% tau are the actual offsets
-% corr tau = offsets of correlations
+%len = min([length(y_received_timing1),length(y_received_timing2),length(y_received_timing3),length(y_received_timing4)]);
 
-y_received_timing3 = y_received3(tau_time3:end);
-
-    if (signals == 4)
-[corr_time4, corr_tau_time4] = xcorr(timing_sent, y_received4);
-[~, offset_time4] = max(abs(corr_time4))
-tau_time4 = abs(corr_tau_time4(offset_time4))+1;
-% tau are the actual offsets
-% corr tau = offsets of correlations
-
-y_received_timing4 = y_received4(tau_time4:end);
-
-len = min([length(y_received_timing1),length(y_received_timing2),length(y_received_timing3),length(y_received_timing4)]);
-
-y_received_timing = y_received_timing1(1:len) + y_received_timing2(1:len) + y_received_timing3(1:len)+ y_received_timing4(1:len);
-    else 
-len = min([length(y_received_timing1),length(y_received_timing2),length(y_received_timing3)]);
-
-y_received_timing = y_received_timing1(1:len) + y_received_timing2(1:len) + y_received_timing3(1:len);
-    end
+%y_received_timing = y_received_timing1(1:len) + y_received_timing2(1:len) + y_received_timing3(1:len)+ y_received_timing4(1:len);
+    
     
 figure(10)
 LargeFigure(gcf, 0.15); % Make figure large
@@ -256,9 +173,7 @@ plot(abs(corr_time1),'b')
 hold on
 plot(abs(corr_time2),'r')
 plot(abs(corr_time3),'g')
-    if (signals == 4)
 plot(abs(corr_time4),'y')
-    end
 title('Time Correlation (Time)')
 set(gca,'fontsize', 15)
 subplot(3,2,4)
@@ -266,9 +181,7 @@ plot(corr_tau_time1,'b')
 hold on
 plot(corr_tau_time2,'r')
 plot(corr_tau_time3,'g')
-    if (signals == 4)
 plot(corr_tau_time4,'y')
-    end
 title('Time Correlation (Time Tau)')
 set(gca,'fontsize', 15)
 subplot(3,2,6)

@@ -22,6 +22,7 @@ freq_preamble = 300;
 timing_preamble = 100;
 pilot_size = 20;
 msg_size = 160;
+delay_size = 10;
 trellis = 0;
 
 pwr = .1;
@@ -155,7 +156,20 @@ pilot_plot_Q = conv(pilot_plot_Q, p);
 %% transmit complex symbols
 transmitsignal = (xI + j*xQ);
 transmitsignal = transmitsignal/max(abs(transmitsignal));
-transmitsignal = transmitsignal*pwr;
+
+transmitsignal1 = transmitsignal*pwr;
+
+rand2 = ceil(rand([1,1])*delay_size)*2;
+transmitsignal2 = [zeros(rand2,1); transmitsignal]*pwr*0.9;
+
+rand3 = ceil(rand([1,1])*delay_size)*2 + delay_size;
+transmitsignal3 = [zeros(rand3,1); transmitsignal]*pwr*0.8;
+
+rand4 = ceil(rand([1,1])*delay_size)*2 + (delay_size*2);
+transmitsignal4 = [zeros(rand4,1); transmitsignal]*pwr*0.7;
+
+transmitsignal = [transmitsignal1; transmitsignal2; transmitsignal3; transmitsignal4];
+
 transmitsignal = reshape(transmitsignal, [], 1);
 
 pilot_plot = (pilot_plot_I + j*pilot_plot_Q);
@@ -211,6 +225,17 @@ if showplot == 1
     xlabel('Time in samples')
     title('Transmitted Signal')
     set(gca,'fontsize', 15)
+    %%% please add this as a plot
+    
+    plot(real(transmitsignal1),'Color',[0,0,0.7])
+    plot(imag(transmitsignal1),'Color',[0,0,0.5])
+    plot(real(transmitsignal2),'Color',[0,0.7,0])
+    plot(imag(transmitsignal2),'Color',[0,0.5,0])
+    plot(real(transmitsignal3),'Color',[0.7,0,0])
+    plot(imag(transmitsignal3),'Color',[0.5,0,0])
+    plot(real(transmitsignal4),'Color',[0,0.7,0.7])
+    plot(imag(transmitsignal4),'Color',[0,0.5,0.5])
+    
     h(2) = subplot(3,2,2);
     plot([-lenp/2+1:lenp/2]/lenp*fs,20*log10(abs(fftshift(1/sqrt(lenp)*fft(p)))))
     ylabel('$|P^{transmit}(f)|$')

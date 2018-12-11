@@ -12,10 +12,14 @@ rng('default');
 
 % Define User Values
 srrc = 1;
-real_time = 1;
-AWGN = 0;
-rot = 3*pi/2;
-noise = -15;
+real_time = 0;
+AWGN = 1;
+if real_time == 1
+    rot = 3*pi/2;
+else
+    rot = 3*pi/2;
+end
+noise = 4;
 freq_est_start = 5000;
 freq_est_end = freq_est_start+1000;
 trellis = 0;
@@ -119,7 +123,7 @@ set(gca,'fontsize',15);
 
 delta_hat = (1/Ts) * freq;
 
-y_received = exp(-j*2*pi*delta_hat1*Ts) * y_received;
+y_received = exp(-j*2*pi*delta_hat*Ts) * y_received;
 
 %% --Apply Timing Recovery-- %%
 
@@ -136,19 +140,24 @@ timing_Q = conv(timing_Q, p);
 timing_sent = timing_I + j*timing_Q;
 timing_sent = reshape(timing_sent, [], 1);
 
-[corr_time1, corr_tau_time1] = xcorr(timing_sent, y_received1);
-[~, offset_time1] = max(abs(corr_time1))
+[corr_time1, corr_tau_time1] = xcorr(timing_sent,y_received);
+[vals, offset_time1] = max(abs(corr_time1));
+findpeaks(abs(corr_time1));
 tau_time1 = abs(corr_tau_time1(offset_time1))+1;
 % tau are the actual offsets
 % corr tau = offsets of correlations
 
-y_received_timing1 = y_received1(tau_time1:end);
+y_received_timing1 = y_received(tau_time1:end);
 
+y_received_timing2 = y_received(tau_time1:end);
 
+y_received_timing3 = y_received(tau_time1:end);
 
-%len = min([length(y_received_timing1),length(y_received_timing2),length(y_received_timing3),length(y_received_timing4)]);
+y_received_timing4 = y_received(tau_time1:end);
 
-%y_received_timing = y_received_timing1(1:len) + y_received_timing2(1:len) + y_received_timing3(1:len)+ y_received_timing4(1:len);
+len = min([length(y_received_timing1),length(y_received_timing2),length(y_received_timing3),length(y_received_timing4)]);
+
+y_received_timing = y_received_timing1(1:len) + y_received_timing2(1:len) + y_received_timing3(1:len)+ y_received_timing4(1:len);
     
     
 figure(10)
@@ -163,25 +172,25 @@ scatter(real(timing_sent),imag(timing_sent))
 title('Quantized Timing')
 set(gca,'fontsize', 15)
 subplot(3,2,5)
-% plot(real(y_received),'b')
-% hold on;
-% plot(imag(y_received),'r')
+plot(real(y_received),'b')
+hold on;
+plot(imag(y_received),'r')
 title('Received Signal')
 set(gca,'fontsize', 15)
 subplot(3,2,3)
 plot(abs(corr_time1),'b')
-hold on
-plot(abs(corr_time2),'r')
-plot(abs(corr_time3),'g')
-plot(abs(corr_time4),'y')
+%hold on
+%plot(abs(corr_time2),'r')
+%plot(abs(corr_time3),'g')
+%plot(abs(corr_time4),'y')
 title('Time Correlation (Time)')
 set(gca,'fontsize', 15)
 subplot(3,2,4)
 plot(corr_tau_time1,'b')
-hold on
-plot(corr_tau_time2,'r')
-plot(corr_tau_time3,'g')
-plot(corr_tau_time4,'y')
+%hold on
+%plot(corr_tau_time2,'r')
+%plot(corr_tau_time3,'g')
+%plot(corr_tau_time4,'y')
 title('Time Correlation (Time Tau)')
 set(gca,'fontsize', 15)
 subplot(3,2,6)

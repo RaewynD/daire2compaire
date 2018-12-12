@@ -10,9 +10,9 @@ clear
 %close all
 %clc
 % Set seed for random number generator (for repeatability of simulation)
-rng('default');
+%rng('default');
 
-global freq_preamble timing_preamble pilot_size
+global freq_preamble timing_preamble pilot_size spreading_gain
 
 %user defined values
 picture = 100;
@@ -23,7 +23,7 @@ timing_preamble = 100;
 pilot_size = 20;
 msg_size = 160;
 delay_size = 50;
-trellis = 0;
+spreading_gain = 100;
 
 pwr = .1;
 
@@ -86,25 +86,8 @@ pilot = get_bits(2);
 [bits,imdim] = get_pic(picture);
 imrecon = reshape(bits,imdim);
 
-if trellis == 1
-    msg = trellis_encode(bits);
-    len = length(msg);
-
-    global possibilities
-
-    test = [];
-    for x = 0:ceil(len/20)-1
-        if (x+1)*20 > len
-            test_msg = msg(x*20+1 : end);
-        else
-            test_msg = msg(x*20+1 : (x+1)*20);
-        end
-        test = [test,trellis_decode(test_msg)];
-    end
-else
-    msg = bits;
-    len = length(msg);
-end
+msg = spread_bits(bits);
+len = length(msg);
 
 % make sure msg is factor of message_size
 to_add = zeros(1, msg_size - mod(len, msg_size));
@@ -123,6 +106,7 @@ for x = [0:num_msg-1]
     x1 = [x1, mini_msg, pilot];
     pilot_plot = [pilot_plot, zeros(1,msg_size), pilot_neg];
 end
+
 
 len = length(x1);
 if (len > transmit_size)
@@ -157,9 +141,9 @@ pilot_plot_Q = conv(pilot_plot_Q, p);
 transmitsignal = (xI + j*xQ);
 transmitsignal = transmitsignal/max(abs(transmitsignal));
 
-rand2 = ceil(rand([1,1])*delay_size)*2;
-rand3 = ceil(rand([1,1])*delay_size)*2 + delay_size*2;
-rand4 = ceil(rand([1,1])*delay_size)*2 + (delay_size*4);
+rand2 = ceil(rand([1,1])*delay_size/2)*2 + delay_size;
+rand3 = ceil(rand([1,1])*delay_size/2)*2 + delay_size*3;
+rand4 = ceil(rand([1,1])*delay_size/2)*2 + (delay_size*5);
 
 transmitsignal1 = [transmitsignal; zeros(rand4,1)]*pwr;
 
@@ -181,7 +165,7 @@ pilot_plot = reshape(pilot_plot, [], 1);
 save('transmitsignal.mat','transmitsignal')
 
 % save for analysis in receive
-save global_vars.mat d fs Ts fc Tc T_sym F_sym symLen a p timing pilot msg N Ns num_msg pilot_plot bits imdim msg_size
+save global_vars.mat d fs Ts fc Tc T_sym F_sym symLen a p timing pilot msg N Ns num_msg pilot_plot bits imdim msg_size spreading_gain
 
 if srrc == 1
     save('transmitsignal_SRRC.mat','transmitsignal')
@@ -294,87 +278,19 @@ end
 
 %% ---Helper Functions--- %%
 
-% 4-state rate 1/2 trellis
-function possibilities = create_possibilities(len)
-    
-    possibilities = zeros(2^len, len*2);
-    
-    for d = 0 : (2^len)-1
-        possibilities(d+1,:) = trellis_encode(de2bi(d,len));
-    end
+% spread code
+function spreaded_bits = spread_bits(bits)
 
-end
+    global spreading_gain
 
-function decoded = trellis_decode(bits)
-
-    global possibilities
-    possibilities = create_possibilities(length(bits)/2);
-    
-    min_d = 0;
-    min_val = length(bits);
-    err = 0;
-    
-    for d = 1:length(possibilities)
-        
-        err = 0;
-        
-        for x = 1:length(bits)
-            if possibilities(d,x) ~= bits(x)
-                err = err + 1;
-            end
-        end
-        
-        if err < min_val
-            min_val = err;
-            min_d = d;
-        end
-        
-    end
-    
-    decoded = possibilities(min_d,:);
-    
-end
-
-function coded = trellis_encode(bits)
-
-    coded = [];
-    
-    cnt_2 = 0;
-    cnt_1 = 0;
-    
-    for x = [1:length(bits)]        
-        if cnt_2 == 0
-            if cnt_1 == 0
-                if bits(x) == 0
-                    coded = [coded,0,0];
-                else
-                    coded = [coded,1,1];
-                end
-            else
-                if bits(x) == 0
-                    coded = [coded,1,0];
-                else
-                    coded = [coded,0,1];
-                end
-            end
+    len = length(bits);
+    spreaded_bits = zeros(1,len*spreading_gain);
+    for x = 1:len
+        if bits(x) == 1
+            spreaded_bits((x-1)*spreading_gain+1:x*spreading_gain) = 1;
         else
-            if cnt_1 == 0
-                if bits(x) == 0
-                    coded = [coded,1,1];
-                else
-                    coded = [coded,0,0];
-                end
-            else
-                if bits(x) == 0
-                    coded = [coded,0,1];
-                else
-                    coded = [coded,1,0];
-                end
-            end
+            spreaded_bits((x-1)*spreading_gain+1:x*spreading_gain) = 0;
         end
-        
-        cnt_2 = cnt_1;
-        cnt_1 = bits(x);
     end
 
 end

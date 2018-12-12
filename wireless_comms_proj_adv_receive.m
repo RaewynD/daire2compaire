@@ -17,12 +17,11 @@ AWGN = 1;
 if real_time == 1
     rot = 3*pi/2;
 else
-    rot = 3*pi/2;
+    rot = 2*pi/2;
 end
 noise = 16;
 freq_est_start = 5000;
 freq_est_end = freq_est_start+1000;
-trellis = 0;
 
 %load transmitsignal.mat
 
@@ -51,7 +50,8 @@ if AWGN == 1
 end
 
 load global_vars
-%d fs Ts fc Tc T_sym F_sym symLen a p timing pilot msg
+%d fs Ts fc Tc T_sym F_sym symLen a p timing pilot msg spreading_gain
+global spreading_gain
 qam = 4;
 D = 1;
 lenp = length(p);
@@ -140,52 +140,34 @@ timing_Q = conv(timing_Q, p);
 timing_sent = timing_I + j*timing_Q;
 timing_sent = reshape(timing_sent, [], 1);
 
-[corr_time1, corr_tau_time1] = xcorr(timing_sent,y_received);
+[corr_time, corr_tau_time] = xcorr(timing_sent,y_received);
 %[max1, offset_time1] = max(abs(corr_time1));
 %[max2, offset_time2] = max(abs(corr_time1(abs(corr_time1)<max1)));
 figure()
-findpeaks(abs(corr_time1));
+findpeaks(abs(corr_time));
 
-[pks, locs] = findpeaks(abs(corr_time1));
-max1 = 0;
-max1_loc = 0;
-max2 = 0;
-max2_loc = 0;
-max3 = 0;
-max3_loc = 0;
+[pks, locs] = findpeaks(abs(corr_time),'SortStr','descend');
+max1 = pks(1);
+max1_loc = locs(1);
+max2 = pks(2);
+max2_loc = locs(2);
+max3 = pks(3);
+max3_loc = locs(3);
+max4 = pks(4);
+max4_loc = locs(4);
 
-for x = 1:length(pks)
-    if pks(x) > max1
-        max3 = max2;
-        max3_loc = max2_loc;
-        max2 = max1;
-        max2_loc = max1_loc;
-        max1 = pks(x);
-        max1_loc = locs(x);
-    elseif pks(x) > max2
-        max3 = max2;
-        max3_loc = max2_loc;
-        max2 = pks(x);
-        max2_loc = locs(x);
-    elseif pks(x) > max3
-        max3 = pks(x);
-        max3_loc = locs(x);
-    end
-end
-
-tau_time1 = abs(corr_tau_time1(max1_loc)+1);
-
-%[max1, max1_offset] = max(pks);
-%offset_time1 = locs(max1_offset);
-%tau_time1 = abs(corr_tau_time1(offset_time1))+1;
+tau_time1 = abs(corr_tau_time(max1_loc))+1;
+tau_time2 = abs(corr_tau_time(max2_loc))+1;
+tau_time3 = abs(corr_tau_time(max3_loc))+1;
+tau_time4 = abs(corr_tau_time(max4_loc))+1;
 % tau are the actual offsets
 % corr tau = offsets of correlations
 
 y_received_timing1 = y_received(tau_time1:end);
 
-y_received_timing2 = y_received(tau_time1:end);
+y_received_timing2 = y_received(tau_time2:end);
 
-y_received_timing3 = y_received(tau_time1:end);
+y_received_timing3 = y_received(tau_time3:end);
 
 %y_received_timing4 = y_received(tau_time1:end);
 
@@ -212,7 +194,7 @@ plot(imag(y_received),'r')
 title('Received Signal')
 set(gca,'fontsize', 15)
 subplot(3,2,3)
-plot(abs(corr_time1),'b')
+plot(abs(corr_time),'b')
 %hold on
 %plot(abs(corr_time2),'r')
 %plot(abs(corr_time3),'g')
@@ -220,7 +202,7 @@ plot(abs(corr_time1),'b')
 title('Time Correlation (Time)')
 set(gca,'fontsize', 15)
 subplot(3,2,4)
-plot(corr_tau_time1,'b')
+plot(corr_tau_time,'b')
 %hold on
 %plot(corr_tau_time2,'r')
 %plot(corr_tau_time3,'g')
@@ -433,33 +415,10 @@ for cnt = 1:num_msg
     xk_hat_rot = (xk_hat_rot>0);
     xk_hat_rot = reshape(xk_hat_rot,1,length(xk_hat_rot));
     
-    if trellis == 1
-        len = length(xk_hat);
-        test_xk = [];
-        test_xk_rot = [];
-        for x = 0:ceil(len/20)-1
-            if (x+1)*20 > len
-                test_msg_xk = xk_hat(x*20+1 : end);
-                test_msg_xk_rot = xk_hat_rot(x*20+1 : end);
-            else
-                test_msg_xk = xk_hat(x*20+1 : (x+1)*20);
-                test_msg_xk_rot = xk_hat_rot(x*20+1 : (x+1)*20);
-            end
-            test_xk = [test_xk,trellis_decode(test_msg_xk)];
-            test_xk_rot = [test_xk_rot,trellis_decode(test_msg_xk_rot)];
-        end
-        
-        msg_hat = [msg_hat,test_xk];
-        vk_all = [vk_all;vk];
-        msg_hat_rot = [msg_hat_rot,test_xk_rot];
-        vk_all_rot = [vk_all;vk_rot];
-    else
-        msg_hat = [msg_hat,xk_hat];
-        vk_all = [vk_all;vk];
-        msg_hat_rot = [msg_hat_rot,xk_hat_rot];
-        vk_all_rot = [vk_all;vk_rot];
-    end
-        
+    msg_hat = [msg_hat,xk_hat];
+    vk_all = [vk_all;vk];
+    msg_hat_rot = [msg_hat_rot,xk_hat_rot];
+    vk_all_rot = [vk_all;vk_rot];        
     
     figure(14)
     cs = subplot(2,2,[1,2]);
@@ -476,6 +435,12 @@ for cnt = 1:num_msg
     set(gca,'fontsize', 15)
     
 end
+
+msg_hat_spread = msg_hat;
+msg_hat_rot_spread = msg_hat_rot;
+
+msg_hat = despread_bits(msg_hat);
+msg_hat_rot = despread_bits(msg_hat_rot);
 
 figure(14)
 subplot(2,2,[3,4])
@@ -801,87 +766,20 @@ end
 
 %% ---Helper Functions--- %%
 
-% 4-state rate 1/2 trellis
-function possibilities = create_possibilities(len)
-    
-    possibilities = zeros(2^len, len*2);
-    
-    for d = 0 : (2^len)-1
-        possibilities(d+1,:) = trellis_encode(de2bi(d,len));
-    end
+% spread code
+function unspreaded_bits = despread_bits(bits)
 
-end
+    global spreading_gain
 
-function decoded = trellis_decode(bits)
-
-    global possibilities
-    possibilities = create_possibilities(length(bits)/2);
-    
-    min_d = 0;
-    min_val = length(bits);
-    err = 0;
-    
-    for d = 1:length(possibilities)
-        
-        err = 0;
-        
-        for x = 1:length(bits)
-            if possibilities(d,x) ~= bits(x)
-                err = err + 1;
-            end
+    len = floor(length(bits)/spreading_gain);
+    unspreaded_bits = zeros(1,len);
+    for x = 1:len
+        ave = 0;
+        for y = 1:spreading_gain
+            ave = ave + bits((x-1)+y);
         end
-        
-        if err < min_val
-            min_val = err;
-            min_d = d;
-        end
-        
-    end
-    
-    decoded = possibilities(min_d,:);
-    
-end
-
-function coded = trellis_encode(bits)
-
-    coded = [];
-    
-    cnt_2 = 0;
-    cnt_1 = 0;
-    
-    for x = [1:length(bits)]        
-        if cnt_2 == 0
-            if cnt_1 == 0
-                if bits(x) == 0
-                    coded = [coded,0,0];
-                else
-                    coded = [coded,1,1];
-                end
-            else
-                if bits(x) == 0
-                    coded = [coded,1,0];
-                else
-                    coded = [coded,0,1];
-                end
-            end
-        else
-            if cnt_1 == 0
-                if bits(x) == 0
-                    coded = [coded,1,1];
-                else
-                    coded = [coded,0,0];
-                end
-            else
-                if bits(x) == 0
-                    coded = [coded,0,1];
-                else
-                    coded = [coded,1,0];
-                end
-            end
-        end
-        
-        cnt_2 = cnt_1;
-        cnt_1 = bits(x);
+        ave = (ave/spreading_gain) > 0.5;
+        unspreaded_bits(x) = ave;
     end
 
 end

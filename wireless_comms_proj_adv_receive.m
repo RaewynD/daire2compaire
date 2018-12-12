@@ -8,7 +8,7 @@
 clear
 %close all
 %clc
-rng('default');
+%rng('default');
 
 % Define User Values
 srrc = 1;
@@ -17,9 +17,10 @@ AWGN = 1;
 if real_time == 1
     rot = 3*pi/2;
 else
-    rot = 1*pi/4;
+    rot = 1*pi/2;
 end
 noise = 0;
+max_min = 2.5e5;
 freq_est_start = 5000;
 freq_est_end = freq_est_start+1000;
 
@@ -156,25 +157,43 @@ max3_loc = locs(3);
 max4 = pks(4);
 max4_loc = locs(4);
 
+num_max = 0;
+if max4 > max_min
+    tau_time4 = abs(corr_tau_time(max4_loc))+1;
+    y_received_timing4 = y_received(tau_time4:end);
+    num_max = 4;
+end
+if max3 > max_min
+    tau_time3 = abs(corr_tau_time(max3_loc))+1;
+    y_received_timing3 = y_received(tau_time3:end);
+    num_max = 3;
+end
+if max2 > max_min
+    tau_time2 = abs(corr_tau_time(max2_loc))+1;
+    y_received_timing2 = y_received(tau_time2:end);
+    num_max = 2;
+end
+
 tau_time1 = abs(corr_tau_time(max1_loc))+1;
-tau_time2 = abs(corr_tau_time(max2_loc))+1;
-tau_time3 = abs(corr_tau_time(max3_loc))+1;
-tau_time4 = abs(corr_tau_time(max4_loc))+1;
+y_received_timing1 = y_received(tau_time1:end);
+num_max = 1;
+
 % tau are the actual offsets
 % corr tau = offsets of correlations
 
-y_received_timing1 = y_received(tau_time1:end);
-
-y_received_timing2 = y_received(tau_time2:end);
-
-y_received_timing3 = y_received(tau_time3:end);
-
-y_received_timing4 = y_received(tau_time1:end);
-
-len = min([length(y_received_timing1),length(y_received_timing2)]);%,length(y_received_timing3),length(y_received_timing4)]);
-
-y_received_timing = y_received_timing1(1:len) + y_received_timing2(1:len);% + y_received_timing3(1:len)+ y_received_timing4(1:len);
-    
+if num_max == 4
+    len = min([length(y_received_timing1),length(y_received_timing2),length(y_received_timing3),length(y_received_timing4)]);
+    y_received_timing = y_received_timing1(1:len) + y_received_timing2(1:len) + y_received_timing3(1:len)+ y_received_timing4(1:len);
+elseif num_max == 3
+    len = min([length(y_received_timing1),length(y_received_timing2),length(y_received_timing3)]);
+    y_received_timing = y_received_timing1(1:len) + y_received_timing2(1:len) + y_received_timing3(1:len);
+elseif num_max == 2
+    len = min([length(y_received_timing1),length(y_received_timing2)]);
+    y_received_timing = y_received_timing1(1:len) + y_received_timing2(1:len);
+else
+    len = length(y_received_timing1);
+    y_received_timing = y_received_timing1(1:len);
+end
     
 figure(10)
 LargeFigure(gcf, 0.15); % Make figure large

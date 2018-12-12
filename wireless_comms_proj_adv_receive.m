@@ -17,9 +17,9 @@ AWGN = 1;
 if real_time == 1
     rot = 3*pi/2;
 else
-    rot = 3*pi/2;
+    rot = 1*pi/4;
 end
-noise = 16;
+noise = 0;
 freq_est_start = 5000;
 freq_est_end = freq_est_start+1000;
 
@@ -169,11 +169,11 @@ y_received_timing2 = y_received(tau_time2:end);
 
 y_received_timing3 = y_received(tau_time3:end);
 
-%y_received_timing4 = y_received(tau_time1:end);
+y_received_timing4 = y_received(tau_time1:end);
 
-len = min([length(y_received_timing1),length(y_received_timing2),length(y_received_timing3)]);%,length(y_received_timing4)]);
+len = min([length(y_received_timing1),length(y_received_timing2)]);%,length(y_received_timing3),length(y_received_timing4)]);
 
-y_received_timing = y_received_timing1(1:len) + y_received_timing2(1:len) + y_received_timing3(1:len);%+ y_received_timing4(1:len);
+y_received_timing = y_received_timing1(1:len) + y_received_timing2(1:len);% + y_received_timing3(1:len)+ y_received_timing4(1:len);
     
     
 figure(10)
@@ -529,9 +529,9 @@ title('Rotated Image')
 xlabel(['BER is: ' num2str(BER_rot)])
 set(gca,'fontsize', 15)
 
-pause();
+%pause();
 
-close all
+%close all
 
 %% --Define Constellation-- %%
 qam_range = 1:sqrt(qam);

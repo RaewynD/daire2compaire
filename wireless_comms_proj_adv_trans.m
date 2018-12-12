@@ -21,11 +21,11 @@ showplot = 1;
 freq_preamble = 300;
 timing_preamble = 1000;
 pilot_size = 20;
-msg_size = 120;
+msg_size = 100;
 delay_size = 50;
 spreading_gain = 100;
 
-pwr = .1;
+pwr = .075;
 
 d = 1;
 
@@ -153,7 +153,7 @@ transmitsignal3 = [zeros(rand3,1); transmitsignal; zeros(rand4-rand3,1)]*pwr*0.9
 
 transmitsignal4 = [zeros(rand4,1); transmitsignal]*pwr*0.85;
 
-transmitsignal = (transmitsignal1 + transmitsignal2 + transmitsignal3 + transmitsignal4)/4;
+transmitsignal = (transmitsignal1 + transmitsignal2 + transmitsignal3)/3;% + transmitsignal4)/4;
 
 transmitsignal = reshape(transmitsignal, [], 1);
 

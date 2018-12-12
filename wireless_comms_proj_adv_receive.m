@@ -17,7 +17,7 @@ AWGN = 1;
 if real_time == 1
     rot = 3*pi/2;
 else
-    rot = 2*pi/2;
+    rot = 3*pi/2;
 end
 noise = 16;
 freq_est_start = 5000;
@@ -368,9 +368,7 @@ zk_msg_start = zk_pilot_end + 1;
 zk_msg_end = zk_msg_start + msg_size/2 - 1; %msg_size is in bit space
 zk_start = zk_msg_end + 1;
 
-msg_hat = [];
 vk_all = [];
-msg_hat_rot = [];
 ho_hat_pops = [];
 vk_all_rot = [];
 
@@ -395,37 +393,15 @@ for cnt = 1:num_msg
     vk = zk_msg / ho_hat;
     vk_rot = vk * exp(j*(rot));
     
-    vIk = real(vk);
-    vQk = imag(vk);
-    vIk_rot = real(vk_rot);
-    vQk_rot = imag(vk_rot);
-    
-    vk_bits = [];
-    vk_bits_rot = [];
-    
-    for x = 1:length(vIk)
-        vk_bits = [vk_bits,vIk(x),vQk(x)];
-        vk_bits_rot = [vk_bits_rot,vIk_rot(x),vQk_rot(x)];
-    end
-    
-    xk_hat = sign(vk_bits);
-    xk_hat = (xk_hat>0);
-    xk_hat = reshape(xk_hat,1,length(xk_hat));
-    xk_hat_rot = sign(vk_bits_rot);
-    xk_hat_rot = (xk_hat_rot>0);
-    xk_hat_rot = reshape(xk_hat_rot,1,length(xk_hat_rot));
-    
-    msg_hat = [msg_hat,xk_hat];
     vk_all = [vk_all;vk];
-    msg_hat_rot = [msg_hat_rot,xk_hat_rot];
-    vk_all_rot = [vk_all;vk_rot];        
+    vk_all_rot = [vk_all_rot;vk_rot];        
     
     figure(14)
     cs = subplot(2,2,[1,2]);
-    scatter(real(vk),imag(vk));
+    scatter(real(vk_rot),imag(vk_rot));
     hold on;
-    scatter(real(zk_pilot), imag(zk_pilot));
-    scatter(real(vk_pilot), imag(vk_pilot));
+    %scatter(real(zk_pilot), imag(zk_pilot));
+    %scatter(real(vk_pilot), imag(vk_pilot));
     box on;
     grid on;
     hold on;
@@ -436,19 +412,41 @@ for cnt = 1:num_msg
     
 end
 
-msg_hat_spread = msg_hat;
-msg_hat_rot_spread = msg_hat_rot;
+%% De-spread and bit estimation
 
-msg_hat = despread_bits(msg_hat);
-msg_hat_rot = despread_bits(msg_hat_rot);
+vIk = real(vk_all);
+vQk = imag(vk_all);
+vIk_rot = real(vk_all_rot);
+vQk_rot = imag(vk_all_rot);
+
+vk_hat = [];
+vk_rot_hat = [];
+
+for x = 1:length(vIk)
+    vk_hat = [vk_hat, vIk(x), vQk(x)];
+    vk_rot_hat = [vk_rot_hat, vIk_rot(x), vQk_rot(x)];
+end
+
+vk_hat = despread_bits(vk_hat);
+vk_rot_hat = despread_bits(vk_rot_hat);
+    
+xk_hat = sign(vk_hat);
+xk_hat = (xk_hat>0);
+xk_hat = reshape(xk_hat,1,length(xk_hat));
+xk_hat_rot = sign(vk_rot_hat);
+xk_hat_rot = (xk_hat_rot>0);
+xk_hat_rot = reshape(xk_hat_rot,1,length(xk_hat_rot));
+
+msg_hat = xk_hat;
+msg_hat_rot = xk_hat_rot;
 
 figure(14)
 subplot(2,2,[3,4])
-stem(real(vk_all),'b')
+stem(real(vk_all_rot),'b')
 box on;
 grid on;
 hold on;
-stem(imag(vk_all),'r')
+stem(imag(vk_all_rot),'r')
 legend('vIk','vQk')
 title('All of vk')
 
@@ -773,12 +771,13 @@ function unspreaded_bits = despread_bits(bits)
 
     len = floor(length(bits)/spreading_gain);
     unspreaded_bits = zeros(1,len);
+    
     for x = 1:len
         ave = 0;
         for y = 1:spreading_gain
-            ave = ave + bits((x-1)+y);
+            ave = ave + bits((x-1)*spreading_gain+y);
         end
-        ave = (ave/spreading_gain) > 0.5;
+        ave = (ave/spreading_gain);
         unspreaded_bits(x) = ave;
     end
 

@@ -12,8 +12,8 @@ rng('default');
 
 % Define User Values
 srrc = 1; % "1" for SRRC to be on. "0" for rectangular pulse.
-real_time = 1; % "1" for Tx/Rx to be on. "0" for AWGN. (must be opposite AWGN)
-AWGN = 0; % "1" for AWGN to be on. "0" for AWGN off. (must be opposite real_time)
+real_time = 0; % "1" for Tx/Rx to be on. "0" for AWGN. (must be opposite AWGN)
+AWGN = 1; % "1" for AWGN to be on. "0" for AWGN off. (must be opposite real_time)
 graph = 1; % "1" for graphs to be on. "0" for them to be off.
 
 % Loads files from the transmitter file

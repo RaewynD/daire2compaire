@@ -19,7 +19,7 @@ if real_time == 1
 else
     rot = 3*pi/2;
 end
-noise = 4;
+noise = 16;
 freq_est_start = 5000;
 freq_est_end = freq_est_start+1000;
 trellis = 0;
@@ -141,9 +141,43 @@ timing_sent = timing_I + j*timing_Q;
 timing_sent = reshape(timing_sent, [], 1);
 
 [corr_time1, corr_tau_time1] = xcorr(timing_sent,y_received);
-[vals, offset_time1] = max(abs(corr_time1));
+%[max1, offset_time1] = max(abs(corr_time1));
+%[max2, offset_time2] = max(abs(corr_time1(abs(corr_time1)<max1)));
+figure()
 findpeaks(abs(corr_time1));
-tau_time1 = abs(corr_tau_time1(offset_time1))+1;
+
+[pks, locs] = findpeaks(abs(corr_time1));
+max1 = 0;
+max1_loc = 0;
+max2 = 0;
+max2_loc = 0;
+max3 = 0;
+max3_loc = 0;
+
+for x = 1:length(pks)
+    if pks(x) > max1
+        max3 = max2;
+        max3_loc = max2_loc;
+        max2 = max1;
+        max2_loc = max1_loc;
+        max1 = pks(x);
+        max1_loc = locs(x);
+    elseif pks(x) > max2
+        max3 = max2;
+        max3_loc = max2_loc;
+        max2 = pks(x);
+        max2_loc = locs(x);
+    elseif pks(x) > max3
+        max3 = pks(x);
+        max3_loc = locs(x);
+    end
+end
+
+tau_time1 = abs(corr_tau_time1(max1_loc)+1);
+
+%[max1, max1_offset] = max(pks);
+%offset_time1 = locs(max1_offset);
+%tau_time1 = abs(corr_tau_time1(offset_time1))+1;
 % tau are the actual offsets
 % corr tau = offsets of correlations
 
@@ -153,11 +187,11 @@ y_received_timing2 = y_received(tau_time1:end);
 
 y_received_timing3 = y_received(tau_time1:end);
 
-y_received_timing4 = y_received(tau_time1:end);
+%y_received_timing4 = y_received(tau_time1:end);
 
-len = min([length(y_received_timing1),length(y_received_timing2),length(y_received_timing3),length(y_received_timing4)]);
+len = min([length(y_received_timing1),length(y_received_timing2),length(y_received_timing3)]);%,length(y_received_timing4)]);
 
-y_received_timing = y_received_timing1(1:len) + y_received_timing2(1:len) + y_received_timing3(1:len)+ y_received_timing4(1:len);
+y_received_timing = y_received_timing1(1:len) + y_received_timing2(1:len) + y_received_timing3(1:len);%+ y_received_timing4(1:len);
     
     
 figure(10)

@@ -11,13 +11,13 @@ clear
 rng('default');
 
 % Define User Values
-rake = 0; % set rake to 1 to have adding after timing, 0 to have adding with de-spreading
+rake = 0; % set rake to 1 to have adding right after timing, 0 to have adding with de-spreading
 real_time = 0; % set to 1 for real time, 0 for AWGN
 if real_time == 1
-    rot = 3*pi/2;
+    rot = 0*pi/2;
     max_min = 1e5;
 else
-    rot = 6*pi/8;
+    rot = 0*pi/2;
     max_min = 2e5;
 end
 noise = 10;
@@ -515,7 +515,7 @@ for cnt = 1:num_msg
 
             %ho_hat = (w'*kz(1:length(complex_pilot)))/(w'*complex_pilot)
             %ho_hat = (complex_pilot' .* kz(1:length(complex_pilot)))/(norm(complex_pilot)^2);
-            ho_hat4 = dot(conj(complex_pilot),zk_pilot4)/norm(complex_pilot)^2;
+            ho_hat4 = dot(complex_pilot,zk_pilot4)/norm(complex_pilot)^2;
             ho_hat_pops4 = [ho_hat_pops4,ho_hat4];
 
             vk_pilot4 = zk_pilot4 / ho_hat4;
@@ -533,7 +533,7 @@ for cnt = 1:num_msg
 
             %ho_hat = (w'*kz(1:length(complex_pilot)))/(w'*complex_pilot)
             %ho_hat = (complex_pilot' .* kz(1:length(complex_pilot)))/(norm(complex_pilot)^2);
-            ho_hat3 = dot(conj(complex_pilot),zk_pilot3)/norm(complex_pilot)^2;
+            ho_hat3 = dot(complex_pilot,zk_pilot3)/norm(complex_pilot)^2;
             ho_hat_pops3 = [ho_hat_pops3,ho_hat3];
 
             vk_pilot3 = zk_pilot3 / ho_hat3;
@@ -551,7 +551,7 @@ for cnt = 1:num_msg
 
             %ho_hat = (w'*kz(1:length(complex_pilot)))/(w'*complex_pilot)
             %ho_hat = (complex_pilot' .* kz(1:length(complex_pilot)))/(norm(complex_pilot)^2);
-            ho_hat2 = dot(conj(complex_pilot),zk_pilot2)/norm(complex_pilot)^2;
+            ho_hat2 = dot(complex_pilot,zk_pilot2)/norm(complex_pilot)^2;
             ho_hat_pops2 = [ho_hat_pops2,ho_hat2];
 
             vk_pilot2 = zk_pilot2 / ho_hat2;
@@ -569,7 +569,7 @@ for cnt = 1:num_msg
     
     %ho_hat = (w'*kz(1:length(complex_pilot)))/(w'*complex_pilot)
     %ho_hat = (complex_pilot' .* kz(1:length(complex_pilot)))/(norm(complex_pilot)^2);
-    ho_hat = dot(conj(complex_pilot),zk_pilot)/norm(complex_pilot)^2;
+    ho_hat = dot(complex_pilot,zk_pilot)/norm(complex_pilot)^2;
     ho_hat_pops = [ho_hat_pops,ho_hat];
 
     vk_pilot = zk_pilot / ho_hat;

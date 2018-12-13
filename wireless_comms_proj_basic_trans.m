@@ -22,6 +22,8 @@ freq_preamble = 300;
 timing_preamble = 50;
 pilot_size = 20;
 msg_size = 160;
+qam = 4;
+D = 1;
 
 pwr = 1;
 
@@ -115,6 +117,8 @@ pilot_plot = pilot_plot';
 % make scaled to qam
 xI_base = x2(1:2:end);
 xQ_base = x2(2:2:end);
+
+x_symb = xI_base + j * xQ_base;
 
 pilot_plot_I = pilot_plot(1:2:end);
 pilot_plot_Q = pilot_plot(2:2:end);
@@ -215,6 +219,55 @@ if showplot == 1
 else
     close all
 end
+
+%% --Define Constellation-- %%
+qam_range = 1:sqrt(qam);
+qam_range = d*qam_range - 0.5*d - sqrt(qam)/2;
+constellation = [];
+ 
+for xi = qam_range
+    for xq = qam_range
+        constellation = [constellation, xi + j*xq];
+    end
+end
+
+    constellationmarkersize = 6;
+    
+    figure() %Constellation Plot Mayne
+    LargeFigure(gcf, 0.15); % Make figure large
+    clf
+    zoom off;
+    plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
+    set(gca,'DataAspectRatio',[1 1 1])
+    grid on;
+    hold on;
+    D = max(D, max(abs(x_symb))+1);
+    axis([-D D -D D])
+    plot([-D:D/100:D],zeros(size([-D:D/100:D])),'k','LineWidth',2)
+    plot(zeros(size([-D:D/100:D])),[-D:D/100:D],'k','LineWidth',2)
+    set(gca,'fontsize', 15)
+    xlabel('$x^{I}$, $z^{I}$')
+    ylabel('$x^{Q}$, $z^{Q}$')
+    
+    % add some noise
+    M = 4; % M-QAM
+    d = 1; % Minimum distance 
+    SNR_mfb_dB = 10; % SNR_MFB in dB.  
+    E_x = d^2/(6*(M-1)); % Calculate the Symbol Energy
+    SNR_mfb_dB = 10^(SNR_mfb_dB/10); % Calculate the SNR
+    sigma = sqrt(E_x/SNR_mfb_dB); % Calculate the STD Dev
+    x_symb = x_symb + sigma/sqrt(2)*(randn(size(x_symb))+j*randn(size(x_symb)));
+
+
+    title('Constellation Plot')
+    %plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
+    for ii=1:length(x_symb)
+        plot(x_symb(ii),'bx')
+        plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
+        if (rem(ii,100)==0)
+            pause(.00002)
+        end
+    end
 
 %% ---Helper Functions--- %%
 

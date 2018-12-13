@@ -46,7 +46,7 @@ qam = 4;
 D = 1;
 lenp = length(p);
 L = length(msg);
-rot = 3*pi/2;
+rot = 0*pi/2;
 
 % Matched filter
 w = flipud(p);
@@ -239,8 +239,11 @@ end
 %% --Filter low pass signals with matched filter in each arm-- %%
 
 % '1/fs' simply serves as 'delta' to approximate integral as sum
-zI = conv(w,yI)*(1/fs);
-zQ = conv(w,yQ)*(1/fs);
+zI_matched = conv(w,yI)*(1/fs);
+zQ_matched = conv(w,yQ)*(1/fs);
+
+zI = zI_matched;
+zQ = zQ_matched;
 
 if graph == 1
     
@@ -346,6 +349,7 @@ zIk_sans_timing = zIk_with_timing(length(timing)/2 + 1 : end);
 zQk_sans_timing = zQk_with_timing(length(timing)/2 + 1: end);
 
 zk = zIk_sans_timing + j * zQk_sans_timing;
+x_symb = zk;
 
 zIk_sans_timing_up = upsample(zIk_sans_timing,fs/F_sym);
 zQk_sans_timing_up = upsample(zQk_sans_timing,fs/F_sym);
@@ -409,7 +413,7 @@ for cnt = 1:num_msg
     zk = zk(zk_start : end);
     disp(['The size of zk is: ' num2str(size(zk))]);
     
-    ho_hat = dot(conj(complex_pilot),zk_pilot)/norm(complex_pilot)^2;
+    ho_hat = dot(complex_pilot,zk_pilot)/norm(complex_pilot)^2;
     ho_hat_pops = [ho_hat_pops,ho_hat];
 
     %% Detect bits - One Tap Channel
@@ -447,10 +451,7 @@ for cnt = 1:num_msg
         
         figure(J)
         cs = subplot(2,2,[1,2]);
-        scatter(real(vk),imag(vk),'r');
-        hold on;
-        scatter(real(zk_pilot), imag(zk_pilot),'k');
-        scatter(real(vk_pilot), imag(vk_pilot),'b');
+        scatter(real(zk_msg),imag(zk_msg),'r');
         box on;
         grid on;
         %hold on;
@@ -572,6 +573,8 @@ end
 
 pause();
 
+graph = 0;
+
 %% --Define Constellation-- %%
 qam_range = 1:sqrt(qam);
 qam_range = d*qam_range - 0.5*d - sqrt(qam)/2;
@@ -585,9 +588,10 @@ end
 
 % --Making some Plots-- %%
 if graph == 1
+    
     constellationmarkersize = 6;
-
-    figure(J) %Constellation Plot Mayne
+    
+    figure() %Constellation Plot Mayne
     LargeFigure(gcf, 0.15); % Make figure large
     clf
     zoom off;
@@ -595,19 +599,28 @@ if graph == 1
     set(gca,'DataAspectRatio',[1 1 1])
     grid on;
     hold on;
-    D = max(D, max(abs(vk_bits_rot))+1);
+    D = max(D, max(abs(x_symb))+1);
     axis([-D D -D D])
     plot([-D:D/100:D],zeros(size([-D:D/100:D])),'k','LineWidth',2)
     plot(zeros(size([-D:D/100:D])),[-D:D/100:D],'k','LineWidth',2)
     set(gca,'fontsize', 15)
     xlabel('$x^{I}$, $z^{I}$')
     ylabel('$x^{Q}$, $z^{Q}$')
+    
+    % add some noise
+    M = 4; % M-QAM
+    d = 1; % Minimum distance 
+    SNR_mfb_dB = 10; % SNR_MFB in dB.  
+    E_x = d^2/(6*(M-1)); % Calculate the Symbol Energy
+    SNR_mfb_dB = 10^(SNR_mfb_dB/10); % Calculate the SNR
+    sigma = sqrt(E_x/SNR_mfb_dB); % Calculate the STD Dev
+    x_symb = x_symb + sigma/sqrt(2)*(randn(size(x_symb))+j*randn(size(x_symb)));
+
 
     title('Constellation Plot')
     %plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
-    for ii=1:length(vk_all)
-        plot(vk_all(ii),'cx')
-        plot(vk_all_rot(ii),'bx')
+    for ii=1:length(x_symb)
+        plot(x_symb(ii),'bx')
         plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
         if (rem(ii,100)==0)
             pause(.00002)

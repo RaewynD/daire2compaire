@@ -175,13 +175,13 @@ if showplot == 1
     figure(1)
     LargeFigure(gcf, 0.15); % Make figure large
     clf
-    h(1) = subplot(3,2,1);
+    h(1) = subplot(2,2,1);
     plot([1:length(p)]/fs,p)
     ylabel('$p^{transmit}(t)$')
     xlabel('Time (s)')
     title('Pulse Signal')
     set(gca,'fontsize', 15)
-    ax(1) = subplot(3,2,3);
+    ax(1) = subplot(2,2,3);
     h(3) = ax(1);
     plot(real(transmitsignal),'b')
     hold on
@@ -193,14 +193,14 @@ if showplot == 1
     xlabel('Time in samples')
     title('Transmitted Signal')
     set(gca,'fontsize', 15)
-    h(2) = subplot(3,2,2);
+    h(2) = subplot(2,2,2);
     plot([-lenp/2+1:lenp/2]/lenp*fs,20*log10(abs(fftshift(1/sqrt(lenp)*fft(p)))))
     ylabel('$|P^{transmit}(f)|$')
     xlabel('Frequency')
     title('Frequency Response of Pulse')
     axis([-4*fc 4*fc -Inf Inf])
     set(gca,'fontsize', 15)
-    ax(2) = subplot(3,2,4);
+    ax(2) = subplot(2,2,4);
     h(4) = ax(2);
     plot([0:length(transmitsignal)-1]/length(transmitsignal)-0.5, abs(fftshift(fft(transmitsignal))))
     ylabel('$|X^{base}(f)|$')
@@ -208,13 +208,15 @@ if showplot == 1
     title('Frequency Response of Transmitted Signal')
     set(gca,'fontsize', 15)
     zoom on
-    h(5) = subplot(3,2,5);
+    
+    figure(2)
+    LargeFigure(gcf, 0.15); % Make figure large
+    clf
+    h(5) = subplot(1,2,1);
     imshow(imrecon)
     xlabel('Desired Image')
-    pos = get(h,'Position');
-    new = mean(cellfun(@(v)v(1),pos(1:2)));
-    set(h(5),'Position',[new,pos{end}(2:end)])
     set(gca,'fontsize', 15)
+    pause(0.5);
     
 else
     close all
@@ -233,9 +235,8 @@ end
 
     constellationmarkersize = 6;
     
-    figure() %Constellation Plot Mayne
-    LargeFigure(gcf, 0.15); % Make figure large
-    clf
+    figure(2) %Constellation Plot Mayne
+    h(6) = subplot(1,2,2);
     zoom off;
     plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
     set(gca,'DataAspectRatio',[1 1 1])
@@ -248,16 +249,6 @@ end
     set(gca,'fontsize', 15)
     xlabel('$x^{I}$, $z^{I}$')
     ylabel('$x^{Q}$, $z^{Q}$')
-    
-    % add some noise
-    M = 4; % M-QAM
-    d = 1; % Minimum distance 
-    SNR_mfb_dB = 10; % SNR_MFB in dB.  
-    E_x = d^2/(6*(M-1)); % Calculate the Symbol Energy
-    SNR_mfb_dB = 10^(SNR_mfb_dB/10); % Calculate the SNR
-    sigma = sqrt(E_x/SNR_mfb_dB); % Calculate the STD Dev
-    x_symb = x_symb + sigma/sqrt(2)*(randn(size(x_symb))+j*randn(size(x_symb)));
-
 
     title('Constellation Plot')
     %plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
@@ -265,10 +256,14 @@ end
         plot(x_symb(ii),'bx')
         plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
         if (rem(ii,100)==0)
-            pause(.00002)
+            pause(.000002)
         end
     end
 
+pause();
+
+close all
+    
 %% ---Helper Functions--- %%
 
 % get frequency preamble, timing preamble, and pilot to transmit

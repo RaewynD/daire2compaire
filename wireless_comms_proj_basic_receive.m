@@ -46,7 +46,6 @@ qam = 4;
 D = 1;
 lenp = length(p);
 L = length(msg);
-rot = 0*pi/2;
 
 % Matched filter
 w = flipud(p);
@@ -257,7 +256,7 @@ if graph == 1
     ylabel('Received Signal')
     xlabel('Time in samples')
     legend('real','imag')
-    title('y_{base}(t) - Post LPF')
+    title('y_{base}(t) - Post Matched Filter')
     set(gca,'fontsize', 15)
     subplot(2,1,2)
     scatter(zI,zQ)
@@ -268,14 +267,12 @@ if graph == 1
     line(xlim, [0 0])
     ylabel('$z^Q(t)$')
     xlabel('$z^I(t)$')
-    title('y_{base}(t) - Post LPF in Complexspace')
+    title('y_{base}(t) - Post Matched Filter in Complexspace')
     set(gca,'fontsize', 15)
 
     J = J+1;
 
 end
-
-
 %% --Sample filtered signal - starts falling apart here-- %%
 
 if srrc == 1
@@ -349,7 +346,6 @@ zIk_sans_timing = zIk_with_timing(length(timing)/2 + 1 : end);
 zQk_sans_timing = zQk_with_timing(length(timing)/2 + 1: end);
 
 zk = zIk_sans_timing + j * zQk_sans_timing;
-x_symb = zk;
 
 zIk_sans_timing_up = upsample(zIk_sans_timing,fs/F_sym);
 zQk_sans_timing_up = upsample(zQk_sans_timing,fs/F_sym);
@@ -395,9 +391,7 @@ zk_start = zk_msg_end + 1;
 
 msg_hat = [];
 vk_all = [];
-msg_hat_rot = [];
 ho_hat_pops = [];
-vk_all_rot = [];
 
 if graph == 1
     
@@ -420,32 +414,22 @@ for cnt = 1:num_msg
 
     vk_pilot = zk_pilot / ho_hat;
     vk = zk_msg / ho_hat;
-    vk_rot = vk * exp(j*(rot));
     
     vIk = real(vk);
     vQk = imag(vk);
-    vIk_rot = real(vk_rot);
-    vQk_rot = imag(vk_rot);
     
     vk_bits = [];
-    vk_bits_rot = [];
     
     for x = 1:length(vIk)
         vk_bits = [vk_bits,vIk(x),vQk(x)];
-        vk_bits_rot = [vk_bits_rot,vIk_rot(x),vQk_rot(x)];
     end
     
     xk_hat = sign(vk_bits);
     xk_hat = (xk_hat>0);
     xk_hat = reshape(xk_hat,1,length(xk_hat));
-    xk_hat_rot = sign(vk_bits_rot);
-    xk_hat_rot = (xk_hat_rot>0);
-    xk_hat_rot = reshape(xk_hat_rot,1,length(xk_hat_rot));
     
     msg_hat = [msg_hat,xk_hat];
     vk_all = [vk_all;vk];
-    msg_hat_rot = [msg_hat_rot,xk_hat_rot];
-    vk_all_rot = [vk_all_rot;vk_rot];
     
     if graph == 1
         
@@ -466,6 +450,8 @@ for cnt = 1:num_msg
     end
     
 end
+
+x_symb = vk_all;
 
 if graph == 1
 
@@ -505,10 +491,9 @@ length(msg_hat);
 msg_size;
 img_size = imdim(1)*imdim(2);
 msg_hat_img = msg_hat(1:img_size);
-msg_hat_img_rot = msg_hat_rot(1:img_size);
 
 bits_err = reshape(bits,imdim);
-msg_hat_err = reshape(msg_hat_img_rot,imdim);
+msg_hat_err = reshape(msg_hat_img,imdim);
 
 
 error_img = zeros(imdim(1),imdim(2),3);
@@ -540,11 +525,7 @@ pause();
 % Compute Bit error rate (BER)
 BER = mean(msg_hat_img ~= bits);
 disp(' ')
-disp(['Your received BER is: ' num2str(BER)])
-disp(' ')
-
-BER_rot = mean(msg_hat_img_rot ~= bits);
-disp(['Your final BER is: ' num2str(BER_rot)])
+disp(['Your final BER is: ' num2str(BER)])
 disp(' ')
 
 if graph == 1
@@ -552,28 +533,26 @@ if graph == 1
     figure(J)
     LargeFigure(gcf, 0.15); % Make figure large
     clf
-    subplot(1,3,1)
+    subplot(1,2,1)
     imshow(reshape(bits,imdim))
     title('Desired Image')
     set(gca,'fontsize', 15)
-    subplot(1,3,2)
-    imshow(reshape(msg_hat_img,imdim))
-    title('Received Image')
+%     subplot(1,2,2)
+%     imshow(reshape(msg_hat_img,imdim))
+%     title('Received Image')
+%     xlabel(['BER is: ' num2str(BER)])
+%     set(gca,'fontsize', 15)
+    subplot(1,2,2)
+    imshow(error_img)
+    title('Recieved Image')
     xlabel(['BER is: ' num2str(BER)])
     set(gca,'fontsize', 15)
-    subplot(1,3,3)
-    imshow(error_img)
-    title('Rotated Image')
-    xlabel(['BER is: ' num2str(BER_rot)])
-    set(gca,'fontsize', 15)
-    
+    pause(0.25);
     J = J+1;
 
 end
 
 pause();
-
-graph = 0;
 
 %% --Define Constellation-- %%
 qam_range = 1:sqrt(qam);
@@ -591,7 +570,7 @@ if graph == 1
     
     constellationmarkersize = 6;
     
-    figure() %Constellation Plot Mayne
+    figure(J) %Constellation Plot Mayne
     LargeFigure(gcf, 0.15); % Make figure large
     clf
     zoom off;
@@ -606,16 +585,6 @@ if graph == 1
     set(gca,'fontsize', 15)
     xlabel('$x^{I}$, $z^{I}$')
     ylabel('$x^{Q}$, $z^{Q}$')
-    
-    % add some noise
-    M = 4; % M-QAM
-    d = 1; % Minimum distance 
-    SNR_mfb_dB = 10; % SNR_MFB in dB.  
-    E_x = d^2/(6*(M-1)); % Calculate the Symbol Energy
-    SNR_mfb_dB = 10^(SNR_mfb_dB/10); % Calculate the SNR
-    sigma = sqrt(E_x/SNR_mfb_dB); % Calculate the STD Dev
-    x_symb = x_symb + sigma/sqrt(2)*(randn(size(x_symb))+j*randn(size(x_symb)));
-
 
     title('Constellation Plot')
     %plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')

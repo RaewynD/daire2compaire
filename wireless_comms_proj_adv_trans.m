@@ -25,7 +25,7 @@ msg_size = 100;
 delay_size = 50;
 spreading_gain = 100;
 
-pwr = .075;
+pwr = 0.075;
 
 d = 1;
 
@@ -86,7 +86,7 @@ pilot = get_bits(2);
 [bits,imdim] = get_pic(picture);
 imrecon = reshape(bits,imdim);
 
-msg = spread_bits(bits);
+msg = bits;
 len = length(msg);
 
 % make sure msg is factor of message_size
@@ -107,7 +107,6 @@ for x = [0:num_msg-1]
     pilot_plot = [pilot_plot, zeros(1,msg_size), pilot_neg];
 end
 
-
 len = length(x1);
 if (len > transmit_size)
     disp('Your transmit signal is too long.');
@@ -123,22 +122,45 @@ pilot_plot = pilot_plot';
 xI_base = x2(1:2:end);
 xQ_base = x2(2:2:end);
 
-pilot_plot_I = pilot_plot(1:2:end);
-pilot_plot_Q = pilot_plot(2:2:end);
+x_base = xI_base + j * xQ_base;
+[x_spread, spreading_mask] = spread_msg(x_base);
+
+freq_spread_start = 1;
+freq_spread_end = (freq_preamble/2)*spreading_gain;
+freq_spread = x_spread(freq_spread_start : freq_spread_end);
+
+timing_spread_start = freq_spread_end + 1;
+timing_spread_end = timing_spread_start + (timing_preamble/2)*spreading_gain;
+timing_spread = x_spread(timing_spread_start : timing_spread_end);
+
+pilot_spread_start = timing_spread_end + 1;
+pilot_spread_end = pilot_spread_start + (pilot_size/2)*spreading_gain;
+pilot_spread = x_spread(pilot_spread_start : pilot_spread_end);
+
+msg_spread = zeros((msg_size/2)*spreading_gain,1);
+
+pilot_2_start = pilot_spread_end + (msg_size/2)*spreading_gain + 1;
+pilot_2_end = pilot_2_start + (pilot_size/2)*spreading_gain;
+pilot_2 = x_spread(pilot_2_start : pilot_2_end);
+
+pilot_3_start = pilot_2_end + (msg_size/2)*spreading_gain + 1;
+pilot_3_end = pilot_3_start + (pilot_size/2)*spreading_gain;
+pilot_3 = x_spread(pilot_3_start : end);
+
+pilot_plot = pilot_plot(1:2:end) + j * pilot_plot(2:2:end);
+pilot_plot = upsample(pilot_plot,spreading_gain);
 
 % convolve with pulse
-xI_up = upsample(xI_base, fs/F_sym);
-xQ_up = upsample(xQ_base, fs/F_sym);
-xI = conv(xI_up, p);
-xQ = conv(xQ_up, p);
+x_up = upsample(x_spread, fs/F_sym);
+x = conv(x_up, p);
 
-pilot_plot_I = upsample(pilot_plot_I, fs/F_sym);
-pilot_plot_Q = upsample(pilot_plot_Q, fs/F_sym);
-pilot_plot_I = conv(pilot_plot_I, p);
-pilot_plot_Q = conv(pilot_plot_Q, p);
+% TODO - remove
+pilot_plot = [freq_spread;timing_spread;pilot_spread;msg_spread;pilot_2;msg_spread;pilot_3];
+pilot_plot = upsample(pilot_plot, fs/F_sym);
+pilot_plot = conv(pilot_plot,p);
 
 %% transmit complex symbols
-transmitsignal = (xI + j*xQ);
+transmitsignal = x;
 transmitsignal = transmitsignal/max(abs(transmitsignal));
 
 rand2 = ceil(rand([1,1])*delay_size/2)*2 + delay_size;
@@ -157,15 +179,19 @@ transmitsignal = (transmitsignal1 + transmitsignal2 + transmitsignal3)/3;% + tra
 
 transmitsignal = reshape(transmitsignal, [], 1);
 
-pilot_plot = (pilot_plot_I + j*pilot_plot_Q);
 pilot_plot = pilot_plot/max(abs(pilot_plot));
 pilot_plot = pilot_plot*pwr;
 pilot_plot = reshape(pilot_plot, [], 1);
 
+pilot_spread_len = len(pilot_spread);
+pilot_spread
+
 save('transmitsignal.mat','transmitsignal')
 
 % save for analysis in receive
-save global_vars.mat d fs Ts fc Tc T_sym F_sym symLen a p timing pilot msg N Ns num_msg pilot_plot bits imdim msg_size spreading_gain
+save global_vars.mat d fs Ts fc Tc T_sym F_sym symLen a p timing pilot msg ...
+    N Ns num_msg pilot_plot bits imdim msg_size ...
+    spreading_gain spreading_mask timing_spread
 
 if srrc == 1
     save('transmitsignal_SRRC.mat','transmitsignal')
@@ -203,8 +229,8 @@ if showplot == 1
     plot(real(transmitsignal),'b')
     hold on
     plot(imag(transmitsignal),'r')
-    plot(imag(pilot_plot),'y')
     plot(real(pilot_plot),'g')
+    plot(imag(pilot_plot),'y--')
     legend('real','imag')
     ylabel('$x^{I}(t)$,  $x^{Q}(t)$')
     xlabel('Time in samples')
@@ -279,18 +305,21 @@ end
 %% ---Helper Functions--- %%
 
 % spread code
-function spreaded_bits = spread_bits(bits)
+function [spreaded_bits,spread_mask] = spread_msg(msg)
 
     global spreading_gain
 
-    len = length(bits);
-    spreaded_bits = zeros(1,len*spreading_gain);
+    len = length(msg);
+    
+    spreaded_bits = [];
+    spread_mask = [];
+    
     for x = 1:len
-        if bits(x) == 1
-            spreaded_bits((x-1)*spreading_gain+1:x*spreading_gain) = 1;
-        else
-            spreaded_bits((x-1)*spreading_gain+1:x*spreading_gain) = 0;
-        end
+        spread = get_bits(3)';
+        spread_mask = [spread_mask;spread];
+        
+        spread = msg(x)*spread;
+        spreaded_bits = [spreaded_bits;spread];
     end
 
 end
@@ -298,7 +327,7 @@ end
 % get frequency preamble, timing preamble, and pilot to transmit
 function bits = get_bits(pic)
 
-    global freq_preamble timing_preamble pilot_size
+    global freq_preamble timing_preamble pilot_size spreading_gain
 
     switch pic
         case 0
@@ -307,6 +336,8 @@ function bits = get_bits(pic)
             bits = randi([0 1],1,timing_preamble);
         case 2
             bits = randi([0 1],1,pilot_size);
+        case 3
+            bits = randi([0 1],1,spreading_gain);
         otherwise
             bits = [1 1 0 1 0 0 0 1 0 1];
     end

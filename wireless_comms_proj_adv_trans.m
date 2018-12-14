@@ -10,7 +10,7 @@ clear
 close all
 %clc
 % Set seed for random number generator (for repeatability of simulation)
-%rng('default');
+rng('default');
 
 global freq_preamble timing_preamble pilot_size spreading_gain
 
@@ -18,10 +18,10 @@ global freq_preamble timing_preamble pilot_size spreading_gain
 picture = 100;
 srrc = 1;
 showplot = 1;
-freq_preamble = 300;
-timing_preamble = 1000;
-pilot_size = 20;
-msg_size = 100;
+freq_preamble = 4;
+timing_preamble = 30;
+pilot_size = 4;
+msg_size = 106;
 delay_size = 50;
 spreading_gain = 100;
 
@@ -143,10 +143,6 @@ pilot_2_start = pilot_spread_end + (msg_size/2)*spreading_gain + 1;
 pilot_2_end = pilot_2_start + (pilot_size/2)*spreading_gain - 1;
 pilot_2 = x_spread(pilot_2_start : pilot_2_end);
 
-pilot_3_start = pilot_2_end + (msg_size/2)*spreading_gain + 1;
-pilot_3_end = pilot_3_start + (pilot_size/2)*spreading_gain - 1;
-pilot_3 = x_spread(pilot_3_start : end);
-
 pilot_plot = pilot_plot(1:2:end) + j * pilot_plot(2:2:end);
 pilot_plot = upsample(pilot_plot,spreading_gain);
 
@@ -155,7 +151,7 @@ x_up = upsample(x_spread, fs/F_sym);
 x = conv(x_up, p);
 
 % TODO - remove
-pilot_plot = [freq_spread;timing_spread;pilot_spread;msg_spread;pilot_2;msg_spread;pilot_3];
+pilot_plot = [freq_spread;timing_spread;pilot_spread;msg_spread;pilot_2];
 pilot_plot = upsample(pilot_plot, fs/F_sym);
 pilot_plot = conv(pilot_plot,p);
 

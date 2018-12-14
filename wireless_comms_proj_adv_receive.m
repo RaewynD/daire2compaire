@@ -12,7 +12,7 @@ rng('default');
 
 % Define User Values
 rake = 0; % set rake to 1 to have adding right after timing, 0 to have adding with de-spreading
-real_time = 0; % set to 1 for real time, 0 for AWGN
+real_time = 1; % set to 1 for real time, 0 for AWGN
 if real_time == 1
     max_min = 1e5;
 else
@@ -486,7 +486,7 @@ end
 zk_orig = zk;
 msg_mask_orig = msg_mask_eq;
 
-zk_pilot_start = 1;
+zk_pilot_start = 2;
 zk_pilot_end = zk_pilot_start + pilot_spread_len;
 zk_msg_start = zk_pilot_end + 1;
 zk_msg_end = zk_msg_start + msg_spread_len - 1;
@@ -512,7 +512,7 @@ for cnt = 1:num_msg
             
             ho_hat4_base = dot(zk_pilot4, msgk_pilot_mask)/norm(msgk_pilot_mask)^2;
             ho_hat4 = conj(ho_hat4_base);
-            ho_hat_pops4 = [ho_hat_pops4,ho_hat4];
+            ho_hat_pops4 = [ho_hat_pops4,ho_hat4_base];
             
             %zk_msg4 = zk_msg4 * ho_hat4_base;
             
@@ -524,7 +524,7 @@ for cnt = 1:num_msg
                 vk_msg_spread4 = [vk_msg_spread4 ; vk_bit_spread];
             end
             
-            vk4 = ho_hat4 * vk_msg_spread4;
+            vk4 = ho_hat4_base * vk_msg_spread4;
             %vk4 = vk_msg_spread4;
             
             zk4 = zk4(zk_start : end);
@@ -550,7 +550,7 @@ for cnt = 1:num_msg
                 vk_msg_spread3 = [vk_msg_spread3 ; vk_bit_spread];
             end
             
-            vk3 = ho_hat3 * vk_msg_spread3;
+            vk3 = ho_hat3_base * vk_msg_spread3;
             %vk3 = vk_msg_spread3;
             
             zk3 = zk3(zk_start : end);
@@ -576,7 +576,7 @@ for cnt = 1:num_msg
                 vk_msg_spread2 = [vk_msg_spread2 ; vk_bit_spread];
             end
             
-            vk2 = ho_hat2 * vk_msg_spread2;
+            vk2 = ho_hat2_base * vk_msg_spread2;
             %vk2 = vk_msg_spread3;
             
             zk2 = zk2(zk_start : end);
@@ -603,7 +603,7 @@ for cnt = 1:num_msg
         vk_msg_spread = [vk_msg_spread ; vk_bit_spread];
     end
 
-    vk = ho_hat * vk_msg_spread;
+    vk = ho_hat_base * vk_msg_spread;
     %vk = vk_msg_spread;
     
     zk = zk(zk_start : end);
@@ -616,12 +616,13 @@ for cnt = 1:num_msg
 
 end
 
-vk_all = vk_all * 10^(12);
+vk_all = vk_all / max(vk_all);
 vk_all_rot = vk_all;
-for x = 1:length(vk_all)
-    if (((real(vk_all(x)) > 0) && (imag(vk_all(x)) > 0)) || ...
-            ((real(vk_all(x)) < 0) && (imag(vk_all(x)) < 0)))
-        vk_all_rot(x) = -vk_all(x);
+vk_all_rot = vk_all * exp(j*pi/4);
+for x = 1:length(vk_all_rot)
+    if (((real(vk_all_rot(x)) > 0) && (imag(vk_all_rot(x)) > 0)) || ...
+            ((real(vk_all_rot(x)) < 0) && (imag(vk_all_rot(x)) < 0)))
+        vk_all_rot(x) = -vk_all_rot(x);
     end
 end
 
@@ -764,9 +765,9 @@ title('Received Image')
 xlabel(['BER is: ' num2str(BER)])
 set(gca,'fontsize', 15)
 
-%pause();
+pause();
 
-%close all
+close all
 
 %% --Define Constellation-- %%
 qam_range = 1:sqrt(qam);

@@ -150,7 +150,7 @@ pilot_plot = upsample(pilot_plot,spreading_gain);
 x_up = upsample(x_spread, fs/F_sym);
 x = conv(x_up, p);
 
-% TODO - remove (???)
+% TODO - remove
 pilot_plot = [freq_spread;timing_spread;pilot_spread;msg_spread;pilot_2];
 pilot_plot = upsample(pilot_plot, fs/F_sym);
 pilot_plot = conv(pilot_plot,p);
@@ -171,7 +171,7 @@ transmitsignal3 = [zeros(rand3,1); transmitsignal; zeros(rand4-rand3,1)]*pwr*0.9
 
 transmitsignal4 = [zeros(rand4,1); transmitsignal]*pwr*0.85;
 
-%transmitsignal = (transmitsignal1 + transmitsignal2 + transmitsignal3)/3;% + transmitsignal4)/4;
+transmitsignal = (transmitsignal1 + transmitsignal2 + transmitsignal3)/3;% + transmitsignal4)/4;
 
 transmitsignal = reshape(transmitsignal, [], 1);
 
@@ -235,10 +235,9 @@ if showplot == 1
     xlabel('Time in samples')
     title('Transmitted Signal')
     set(gca,'fontsize', 15)
+    %%% please add this as a plot
     
     figure(3)
-    LargeFigure(gcf, 0.15); % Make figure large
-    clf
     plot(real(transmitsignal1),'Color',[0,0,0.7])
     hold on
     plot(imag(transmitsignal1),'Color',[0,0,0.5])

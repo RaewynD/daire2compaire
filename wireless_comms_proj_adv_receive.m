@@ -7,7 +7,7 @@
 
 clear
 close all
-clc
+%clc
 rng('default');
 
 % Define User Values

@@ -40,8 +40,11 @@ else
 end
 
 load global_vars
-%d fs Ts fc Tc T_sym F_sym symLen a p timing pilot msg spreading_gain
-global spreading_gain
+% d fs Ts fc Tc T_sym F_sym symLen a p timing pilot msg ...
+%    N Ns num_msg pilot_plot bits imdim msg_size ...
+%    spreading_gain spreading_mask timing_spread pilot_spread
+
+global spreading_gain spreading_mask timing_spread pilot_spread
 qam = 4;
 D = 1;
 lenp = length(p);
@@ -124,12 +127,13 @@ timing_sent = timing_sent';
 timing_I = timing_sent(1:2:end)*(0.5*d);
 timing_Q = timing_sent(2:2:end)*(0.5*d);
 
-timing_I = upsample(timing_I, fs/F_sym);
-timing_Q = upsample(timing_Q, fs/F_sym);
-timing_I = conv(timing_I, p);
-timing_Q = conv(timing_Q, p);
-
 timing_sent = timing_I + j*timing_Q;
+
+timing_sent = spread_msg(timing_sent);
+
+timing_sent = upsample(timing_sent, fs/F_sym);
+timing_sent = conv(timing_sent, p);
+
 timing_sent = reshape(timing_sent, [], 1);
 
 [corr_time, corr_tau_time] = xcorr(timing_sent,y_received);
@@ -403,29 +407,31 @@ linkaxes(zz,'x')
 
 if rake == 0
     if num_max > 3
-        zIk_sans_timing4 = zIk_with_timing4(length(timing)/2 + 1 : end);
-        zQk_sans_timing4 = zQk_with_timing4(length(timing)/2 + 1: end);
+        zIk_sans_timing4 = zIk_with_timing4(length(timing_sent)/2 + 1 : end);
+        zQk_sans_timing4 = zQk_with_timing4(length(timing_sent)/2 + 1: end);
 
         zk4 = zIk_sans_timing4 + j * zQk_sans_timing4;
     end
     if num_max > 2
-        zIk_sans_timing3 = zIk_with_timing3(length(timing)/2 + 1 : end);
-        zQk_sans_timing3 = zQk_with_timing3(length(timing)/2 + 1: end);
+        zIk_sans_timing3 = zIk_with_timing3(length(timing_sent)/2 + 1 : end);
+        zQk_sans_timing3 = zQk_with_timing3(length(timing_sent)/2 + 1: end);
 
         zk3 = zIk_sans_timing3 + j * zQk_sans_timing3;
     end
     if num_max > 1
-        zIk_sans_timing2 = zIk_with_timing2(length(timing)/2 + 1 : end);
-        zQk_sans_timing2 = zQk_with_timing2(length(timing)/2 + 1: end);
+        zIk_sans_timing2 = zIk_with_timing2(length(timing_sent)/2 + 1 : end);
+        zQk_sans_timing2 = zQk_with_timing2(length(timing_sent)/2 + 1: end);
 
         zk2 = zIk_sans_timing2 + j * zQk_sans_timing2;
     end
 end
 
-zIk_sans_timing = zIk_with_timing(length(timing)/2 + 1 : end);
-zQk_sans_timing = zQk_with_timing(length(timing)/2 + 1: end);
+zIk_sans_timing = zIk_with_timing(length(timing_sent) + 1 : end);
+zQk_sans_timing = zQk_with_timing(length(timing_sent) + 1 : end);
 
 zk = zIk_sans_timing + j * zQk_sans_timing;
+
+msg_mask_sans_timing = msg_mask(length(timing_sent) + 1 : end);
     
 %% Plot
 
@@ -507,9 +513,12 @@ for cnt = 1:num_msg
     
     % One Tap Channel
     if rake == 0
-        if num_max > 3
+        if num_max > 3            
             zk_pilot4 = zk4(1 : zk_pilot_end);
             zk_msg4 = zk4(zk_msg_start : zk_msg_end);
+            
+            
+            
             zk4 = zk4(zk_start : end);
             disp(['The size of zk4 is: ' num2str(size(zk4))])
 
@@ -1022,21 +1031,15 @@ end
 
 %% ---Helper Functions--- %%
 
-% spread code
-function unspreaded_bits = despread_bits(bits)
+% despread code
+function [despreaded_bits] = despread_msg(msg_spread)
 
-    global spreading_gain
-
-    len = floor(length(bits)/spreading_gain);
-    unspreaded_bits = zeros(1,len);
+    global spreading_gain spreading_mask
     
-    for x = 1:len
-        ave = 0;
-        for y = 1:spreading_gain
-            ave = ave + bits((x-1)*spreading_gain+y);
-        end
-        ave = (ave/spreading_gain);
-        unspreaded_bits(x) = ave;
+    despreaded_bits = [];
+    for x = 1 : length(msg_spread) / spreading_gain
+        msg = msg_spread((x-1)*spreading_gain+1:x*spreading_gain) / spreading_mask;
+        despreaded_bits = [despreaded_bits,msg];
     end
 
 end

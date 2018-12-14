@@ -6,18 +6,16 @@
 %% --Main Receive Code-- %%
 
 clear
-%close all
-%clc
+close all
+clc
 rng('default');
 
 % Define User Values
 rake = 0; % set rake to 1 to have adding right after timing, 0 to have adding with de-spreading
 real_time = 0; % set to 1 for real time, 0 for AWGN
 if real_time == 1
-    rot = 0*pi/2;
     max_min = 1e5;
 else
-    rot = 0*pi/2;
     max_min = 2e5;
 end
 noise = 10;
@@ -39,12 +37,13 @@ else
     receivedsignal = trans + sigma/sqrt(2)*(randn(size(trans))+j*randn(size(trans)));
 end
 
+global spreading_gain spreading_mask timing_spread pilot_spread
+
 load global_vars
 % d fs Ts fc Tc T_sym F_sym symLen a p timing pilot msg ...
 %    N Ns num_msg pilot_plot bits imdim msg_size ...
-%    spreading_gain spreading_mask timing_spread pilot_spread
+%    spreading_gain spreading_mask timing_spread pilot_spread_len msg_spread_len
 
-global spreading_gain spreading_mask timing_spread pilot_spread
 qam = 4;
 D = 1;
 lenp = length(p);
@@ -93,15 +92,6 @@ set(gca,'fontsize', 15)
 disp(' ')
 disp('Hello. Thanks for running this program. I will try to find your message now')
 disp(' ')
-disp(['I am searching for Pilot signal: ' num2str(pilot)])
-disp(' ')
-
-figure(9)
-LargeFigure(gcf, 0.15); % Make figure large
-clf
-stem(pilot)
-title('Pilot Signal')
-set(gca,'fontsize', 15)
 
 %% --Apply Frequency Sync-- %%
 
@@ -122,14 +112,7 @@ y_received = exp(-j*2*pi*delta_hat*Ts) * y_received;
 
 %% --Apply Timing Recovery-- %%
 
-timing_sent = 2*timing - 1;
-timing_sent = timing_sent';
-timing_I = timing_sent(1:2:end)*(0.5*d);
-timing_Q = timing_sent(2:2:end)*(0.5*d);
-
-timing_sent = timing_I + j*timing_Q;
-
-timing_sent = spread_msg(timing_sent);
+timing_sent = timing_spread;
 
 timing_sent = upsample(timing_sent, fs/F_sym);
 timing_sent = conv(timing_sent, p);
@@ -168,7 +151,7 @@ end
 if max4 > max_min
     tau_time4 = abs(corr_tau_time(max4_loc))+1;
     y_received_timing4 = y_received(tau_time4:end);
-    num_max = 4;
+    num_max = 3;
 end
 
 tau_time1 = abs(corr_tau_time(max1_loc))+1;
@@ -297,19 +280,23 @@ if rake == 0
     if num_max > 3
         zI4 = conv(w,yI4)*(1/fs);
         zQ4 = conv(w,yQ4)*(1/fs);
+        z4_test = conv(w,y_received_timing4)*(1/fs);
     end
     if num_max > 2
         zI3 = conv(w,yI3)*(1/fs);
         zQ3 = conv(w,yQ3)*(1/fs);
+        z3_test = conv(w,y_received_timing3)*(1/fs);
     end
     if num_max > 1
         zI2 = conv(w,yI2)*(1/fs);
         zQ2 = conv(w,yQ2)*(1/fs);
+        z2_test = conv(w,y_received_timing2)*(1/fs);
     end
 end
 
 zI = conv(w,yI)*(1/fs);
 zQ = conv(w,yQ)*(1/fs);
+z_test = conv(w,y_received_timing)*(1/fs);
 
 %% Plot
 
@@ -338,19 +325,23 @@ if rake == 0
     if num_max > 3
         zIk_with_timing4 = zI4(length(w):fs*T_sym:end); 
         zQk_with_timing4 = zQ4(length(w):fs*T_sym:end);
+        zk_with_timing_test4 = z4_test(length(w):fs*T_sym:end);
     end
     if num_max > 2
         zIk_with_timing3 = zI3(length(w):fs*T_sym:end); 
         zQk_with_timing3 = zQ3(length(w):fs*T_sym:end);
+        zk_with_timing_test3 = z3_test(length(w):fs*T_sym:end);
     end
     if num_max > 1
         zIk_with_timing2 = zI2(length(w):fs*T_sym:end); 
         zQk_with_timing2 = zQ2(length(w):fs*T_sym:end);
+        zk_with_timing_test2 = z2_test(length(w):fs*T_sym:end);
     end
 end
 
 zIk_with_timing = zI(length(w):fs*T_sym:end); 
 zQk_with_timing = zQ(length(w):fs*T_sym:end);
+zk_with_timing_test = z_test(length(w):fs*T_sym:end);
 
 %% Plot
 
@@ -407,32 +398,36 @@ linkaxes(zz,'x')
 
 if rake == 0
     if num_max > 3
-        zIk_sans_timing4 = zIk_with_timing4(length(timing_sent)/2 + 1 : end);
-        zQk_sans_timing4 = zQk_with_timing4(length(timing_sent)/2 + 1: end);
+        zIk_sans_timing4 = zIk_with_timing4(length(timing_spread) + 1 : end);
+        zQk_sans_timing4 = zQk_with_timing4(length(timing_spread) + 1: end);
+        zk_sans_timing_test4 = zk_with_timing_test4(length(timing_spread) + 1 : end);
 
         zk4 = zIk_sans_timing4 + j * zQk_sans_timing4;
     end
     if num_max > 2
-        zIk_sans_timing3 = zIk_with_timing3(length(timing_sent)/2 + 1 : end);
-        zQk_sans_timing3 = zQk_with_timing3(length(timing_sent)/2 + 1: end);
+        zIk_sans_timing3 = zIk_with_timing3(length(timing_spread) + 1 : end);
+        zQk_sans_timing3 = zQk_with_timing3(length(timing_spread) + 1: end);
+        zk_sans_timing_test3 = zk_with_timing_test3(length(timing_spread) + 1 : end);
 
         zk3 = zIk_sans_timing3 + j * zQk_sans_timing3;
     end
     if num_max > 1
-        zIk_sans_timing2 = zIk_with_timing2(length(timing_sent)/2 + 1 : end);
-        zQk_sans_timing2 = zQk_with_timing2(length(timing_sent)/2 + 1: end);
+        zIk_sans_timing2 = zIk_with_timing2(length(timing_spread) + 1 : end);
+        zQk_sans_timing2 = zQk_with_timing2(length(timing_spread) + 1: end);
+        zk_sans_timing_test2 = zk_with_timing_test2(length(timing_spread) + 1 : end);
 
         zk2 = zIk_sans_timing2 + j * zQk_sans_timing2;
     end
 end
 
-zIk_sans_timing = zIk_with_timing(length(timing_sent) + 1 : end);
-zQk_sans_timing = zQk_with_timing(length(timing_sent) + 1 : end);
+zIk_sans_timing = zIk_with_timing(timing_spread_len + 1 : end);
+zQk_sans_timing = zQk_with_timing(timing_spread_len + 1 : end);
+zk_sans_timing_test = zk_with_timing_test(timing_spread_len + 1 : end);
 
 zk = zIk_sans_timing + j * zQk_sans_timing;
 
-msg_mask_sans_timing = msg_mask(length(timing_sent) + 1 : end);
-    
+msg_mask_eq = spreading_mask(freq_spread_len + timing_spread_len + 1 : end);
+
 %% Plot
 
 zIk_sans_timing_up = upsample(zIk_sans_timing,fs/F_sym);
@@ -465,7 +460,7 @@ zQk_sans_timing_up = upsample(zQk_sans_timing,fs/F_sym);
 % set(gca,'fontsize', 15)
 % linkaxes(zy,'x')
 
-%% --Equalization-- %%
+%% --Equalization and De-Spread-- %%
 
 if rake == 0
     if num_max > 3
@@ -473,37 +468,32 @@ if rake == 0
 
         vk_all4 = [];
         ho_hat_pops4 = [];
-        vk_all_rot4 = [];
     end
     if num_max > 2
         zk_orig3 = zk3;
 
         vk_all3 = [];
         ho_hat_pops3 = [];
-        vk_all_rot3 = [];
     end
     if num_max > 1
         zk_orig2 = zk2;
 
         vk_all2 = [];
         ho_hat_pops2 = [];
-        vk_all_rot2 = [];
     end
 end
 
 zk_orig = zk;
+msg_mask_orig = msg_mask_eq;
 
-pilot = 2*pilot - 1;
-complex_pilot = pilot(1:2:end) + j*pilot(2:2:end);
-
-zk_pilot_end = length(complex_pilot);
+zk_pilot_start = 1;
+zk_pilot_end = zk_pilot_start + pilot_spread_len;
 zk_msg_start = zk_pilot_end + 1;
-zk_msg_end = zk_msg_start + msg_size/2 - 1; %msg_size is in bit space
+zk_msg_end = zk_msg_start + msg_spread_len - 1;
 zk_start = zk_msg_end + 1;
 
 vk_all = [];
 ho_hat_pops = [];
-vk_all_rot = [];
 
 figure(14)
 LargeFigure(gcf, 0.15); % Make figure large
@@ -511,209 +501,199 @@ clf
 
 for cnt = 1:num_msg
     
+    msgk_pilot_mask = msg_mask_eq(zk_pilot_start : zk_pilot_end);
+    msgk_mask = msg_mask_eq(zk_msg_start : zk_msg_end);
+    
     % One Tap Channel
     if rake == 0
-        if num_max > 3            
-            zk_pilot4 = zk4(1 : zk_pilot_end);
+        if num_max > 3
+            zk_pilot4 = zk4(zk_pilot_start : zk_pilot_end);
             zk_msg4 = zk4(zk_msg_start : zk_msg_end);
             
+            ho_hat4_base = dot(zk_pilot4, msgk_pilot_mask)/norm(msgk_pilot_mask)^2;
+            ho_hat4 = conj(ho_hat4_base);
+            ho_hat_pops4 = [ho_hat_pops4,ho_hat4];
             
+            %zk_msg4 = zk_msg4 * ho_hat4_base;
+            
+            vk_msg_spread4 = [];
+            for x = 0:msg_size/2-1
+                bit_start = x*spreading_gain+1;
+                bit_end = (x+1)*spreading_gain;
+                vk_bit_spread = zk_msg4(bit_start : bit_end)' / msgk_mask(bit_start : bit_end)';
+                vk_msg_spread4 = [vk_msg_spread4 ; vk_bit_spread];
+            end
+            
+            vk4 = ho_hat4 * vk_msg_spread4;
+            %vk4 = vk_msg_spread4;
             
             zk4 = zk4(zk_start : end);
             disp(['The size of zk4 is: ' num2str(size(zk4))])
 
-            %ho_hat = (w'*kz(1:length(complex_pilot)))/(w'*complex_pilot)
-            %ho_hat = (complex_pilot' .* kz(1:length(complex_pilot)))/(norm(complex_pilot)^2);
-            ho_hat4 = dot(complex_pilot,zk_pilot4)/norm(complex_pilot)^2;
-            ho_hat_pops4 = [ho_hat_pops4,ho_hat4];
-
-            vk_pilot4 = zk_pilot4 / ho_hat4;
-            vk4 = zk_msg4 / ho_hat4;
-            vk_rot4 = vk4 * exp(j*(rot));
-
-            vk_all4 = [vk_all4;vk4];
-            vk_all_rot4 = [vk_all_rot4;vk_rot4];     
+            vk_all4 = [vk_all4; vk4];     
         end
         if num_max > 2
-            zk_pilot3 = zk3(1 : zk_pilot_end);
+            zk_pilot3 = zk3(zk_pilot_start : zk_pilot_end);
             zk_msg3 = zk3(zk_msg_start : zk_msg_end);
+            
+            ho_hat3_base = dot(zk_pilot3, msgk_pilot_mask)/norm(msgk_pilot_mask)^2;
+            ho_hat3 = conj(ho_hat3_base);
+            ho_hat_pops3 = [ho_hat_pops3,ho_hat3];
+            
+            %zk_msg3 = zk_msg3 * ho_hat3_base;
+            
+            vk_msg_spread3 = [];
+            for x = 0:msg_size/2-1
+                bit_start = x*spreading_gain+1;
+                bit_end = (x+1)*spreading_gain;
+                vk_bit_spread = zk_msg3(bit_start : bit_end)' / msgk_mask(bit_start : bit_end)';
+                vk_msg_spread3 = [vk_msg_spread3 ; vk_bit_spread];
+            end
+            
+            vk3 = ho_hat3 * vk_msg_spread3;
+            %vk3 = vk_msg_spread3;
+            
             zk3 = zk3(zk_start : end);
             disp(['The size of zk3 is: ' num2str(size(zk3))])
 
-            %ho_hat = (w'*kz(1:length(complex_pilot)))/(w'*complex_pilot)
-            %ho_hat = (complex_pilot' .* kz(1:length(complex_pilot)))/(norm(complex_pilot)^2);
-            ho_hat3 = dot(complex_pilot,zk_pilot3)/norm(complex_pilot)^2;
-            ho_hat_pops3 = [ho_hat_pops3,ho_hat3];
-
-            vk_pilot3 = zk_pilot3 / ho_hat3;
-            vk3 = zk_msg3 / ho_hat3;
-            vk_rot3 = vk3 * exp(j*(rot));
-
-            vk_all3 = [vk_all3;vk3];
-            vk_all_rot3 = [vk_all_rot3;vk_rot3];     
+            vk_all3 = [vk_all3; vk3];
         end
         if num_max > 1
-            zk_pilot2 = zk2(1 : zk_pilot_end);
+            zk_pilot2 = zk2(zk_pilot_start : zk_pilot_end);
             zk_msg2 = zk2(zk_msg_start : zk_msg_end);
+            
+            ho_hat2_base = dot(zk_pilot2, msgk_pilot_mask)/norm(msgk_pilot_mask)^2;
+            ho_hat2 = conj(ho_hat2_base);
+            ho_hat_pops2 = [ho_hat_pops2,ho_hat2];
+            
+            %zk_msg2 = zk_msg2 * ho_hat2_base;
+            
+            vk_msg_spread2 = [];
+            for x = 0:msg_size/2-1
+                bit_start = x*spreading_gain+1;
+                bit_end = (x+1)*spreading_gain;
+                vk_bit_spread = zk_msg2(bit_start : bit_end)' / msgk_mask(bit_start : bit_end)';
+                vk_msg_spread2 = [vk_msg_spread2 ; vk_bit_spread];
+            end
+            
+            vk2 = ho_hat2 * vk_msg_spread2;
+            %vk2 = vk_msg_spread3;
+            
             zk2 = zk2(zk_start : end);
             disp(['The size of zk2 is: ' num2str(size(zk2))])
 
-            %ho_hat = (w'*kz(1:length(complex_pilot)))/(w'*complex_pilot)
-            %ho_hat = (complex_pilot' .* kz(1:length(complex_pilot)))/(norm(complex_pilot)^2);
-            ho_hat2 = dot(complex_pilot,zk_pilot2)/norm(complex_pilot)^2;
-            ho_hat_pops2 = [ho_hat_pops2,ho_hat2];
-
-            vk_pilot2 = zk_pilot2 / ho_hat2;
-            vk2 = zk_msg2 / ho_hat2;
-            vk_rot2 = vk2 * exp(j*(rot));
-
-            vk_all2 = [vk_all2;vk2];
-            vk_all_rot2 = [vk_all_rot2;vk_rot2];     
+            vk_all2 = [vk_all2; vk2];     
         end
     end
-    zk_pilot = zk(1 : zk_pilot_end);
+
+    zk_pilot = zk(zk_pilot_start : zk_pilot_end);
     zk_msg = zk(zk_msg_start : zk_msg_end);
+
+    ho_hat_base = dot(zk_pilot, msgk_pilot_mask)/norm(msgk_pilot_mask)^2;
+    ho_hat = conj(ho_hat_base);
+    ho_hat_pops = [ho_hat_pops,ho_hat];
+            
+    %zk_msg = zk_msg * ho_hat_base;
+
+    vk_msg_spread = [];
+    for x = 0:msg_size/2-1
+        bit_start = x*spreading_gain+1;
+        bit_end = (x+1)*spreading_gain;
+        vk_bit_spread = zk_msg(bit_start : bit_end)' / msgk_mask(bit_start : bit_end)';
+        vk_msg_spread = [vk_msg_spread ; vk_bit_spread];
+    end
+
+    vk = ho_hat * vk_msg_spread;
+    %vk = vk_msg_spread;
+    
     zk = zk(zk_start : end);
     disp(['The size of zk is: ' num2str(size(zk))])
-    
-    %ho_hat = (w'*kz(1:length(complex_pilot)))/(w'*complex_pilot)
-    %ho_hat = (complex_pilot' .* kz(1:length(complex_pilot)))/(norm(complex_pilot)^2);
-    ho_hat = dot(complex_pilot,zk_pilot)/norm(complex_pilot)^2;
-    ho_hat_pops = [ho_hat_pops,ho_hat];
 
-    vk_pilot = zk_pilot / ho_hat;
-    vk = zk_msg / ho_hat;
-    vk_rot = vk * exp(j*(rot));
+    vk_all = [vk_all; vk];
     
-    vk_all = [vk_all;vk];
-    vk_all_rot = [vk_all_rot;vk_rot];        
-    
+    msg_mask_eq = msg_mask_eq(zk_start : end);
+    disp(['The size of mask is: ' num2str(size(msg_mask_eq))])
+
+end
+
+vk_all = vk_all * 10^(12);
+vk_all_rot = vk_all;
+for x = 1:length(vk_all)
+    if (((real(vk_all(x)) > 0) && (imag(vk_all(x)) > 0)) || ...
+            ((real(vk_all(x)) < 0) && (imag(vk_all(x)) < 0)))
+        vk_all_rot(x) = -vk_all(x);
+    end
+end
+
+vk_all = vk_all_rot;
+
     %% Plot
+    
+    expectedI = bits(1:2:end)*2-1;
+    expectedQ = bits(2:2:end)*2-1;
+    for x = 1:length(expectedI)
+        expectedI(x) = expectedI(x)+rand()/4;
+        expectedQ(x) = expectedQ(x)+rand()/4;
+    end
     
     figure(14)
     cs = subplot(2,2,[1,2]);
-    scatter(real(vk_rot),imag(vk_rot));
+    scatter(real(vk_all),imag(vk_all),'b');
     hold on;
-    %scatter(real(zk_pilot), imag(zk_pilot));
-    %scatter(real(vk_pilot), imag(vk_pilot));
+    scatter(real(vk_all_rot),imag(vk_all_rot),'r');
+    scatter(expectedI,expectedQ,'g');
     box on;
     grid on;
-    hold on;
     line([0 0], ylim)
     line(xlim, [0 0])
     title('Complexspace of vk post equalization')
     set(gca,'fontsize', 15)
-    
-end
 
-%% --De-spread-- %%
-
-if rake == 0
-    if num_max > 3
-        vIk4 = real(vk_all4);
-        vQk4 = imag(vk_all4);
-        vIk_rot4 = real(vk_all_rot4);
-        vQk_rot4 = imag(vk_all_rot4);
-
-        vk_hat4 = [];
-        vk_rot_hat4 = [];
-
-        for x = 1:length(vIk4)
-            vk_hat4 = [vk_hat4, vIk4(x), vQk4(x)];
-            vk_rot_hat4 = [vk_rot_hat4, vIk_rot4(x), vQk_rot4(x)];
-        end
-        
-        vk_hat4 = despread_bits(vk_hat4);
-        vk_rot_hat4 = despread_bits(vk_rot_hat4);
-    end
-    if num_max > 2
-        vIk3 = real(vk_all3);
-        vQk3 = imag(vk_all3);
-        vIk_rot3 = real(vk_all_rot3);
-        vQk_rot3 = imag(vk_all_rot3);
-
-        vk_hat3 = [];
-        vk_rot_hat3 = [];
-
-        for x = 1:length(vIk3)
-            vk_hat3 = [vk_hat3, vIk3(x), vQk3(x)];
-            vk_rot_hat3 = [vk_rot_hat3, vIk_rot3(x), vQk_rot3(x)];
-        end
-        
-        vk_hat3 = despread_bits(vk_hat3);
-        vk_rot_hat3 = despread_bits(vk_rot_hat3);
-    end
-    if num_max > 1
-        vIk2 = real(vk_all2);
-        vQk2 = imag(vk_all2);
-        vIk_rot2 = real(vk_all_rot2);
-        vQk_rot2 = imag(vk_all_rot2);
-
-        vk_hat2 = [];
-        vk_rot_hat2 = [];
-
-        for x = 1:length(vIk2)
-            vk_hat2 = [vk_hat2, vIk2(x), vQk2(x)];
-            vk_rot_hat2 = [vk_rot_hat2, vIk_rot2(x), vQk_rot2(x)];
-        end
-        
-        vk_hat2 = despread_bits(vk_hat2);
-        vk_rot_hat2 = despread_bits(vk_rot_hat2);
-    end
-end
-        
-
-vIk = real(vk_all);
-vQk = imag(vk_all);
-vIk_rot = real(vk_all_rot);
-vQk_rot = imag(vk_all_rot);
-
-vk_hat = [];
-vk_rot_hat = [];
-
-for x = 1:length(vIk)
-    vk_hat = [vk_hat, vIk(x), vQk(x)];
-    vk_rot_hat = [vk_rot_hat, vIk_rot(x), vQk_rot(x)];
-end
-
-vk_hat = despread_bits(vk_hat);
-vk_rot_hat = despread_bits(vk_rot_hat);
+%% --Adder-- %%
 
 if rake == 0
     if num_max == 4
-        vk_hat = sum_rake([vk_hat4; vk_hat3; vk_hat2; vk_hat]);
-        vk_rot_hat = sum_rake([vk_rot_hat4; vk_rot_hat3; vk_rot_hat2; vk_rot_hat]);
+        vk_hat = vk_all4 + vk_all3 + vk_all2 + vk_all;
     elseif num_max == 3
-        vk_hat = sum_rake([vk_hat3; vk_hat2; vk_hat]);
-        vk_rot_hat = sum_rake([vk_rot_hat3; vk_rot_hat2; vk_rot_hat]);
+        vk_hat = vk_all3 + vk_all2 + vk_all;
     elseif num_max == 2
-        vk_hat = sum_rake([vk_hat2; vk_hat]);
-        vk_rot_hat = sum_rake([vk_rot_hat2; vk_rot_hat]);
+        vk_hat = vk_all2 + vk_all;
+    else
+        vk_hat = vk_all;
     end
 end
         
 
 %% --Bit Estimation-- %%
 
-xk_hat = sign(vk_hat);
+xk_hat = [];
+vIk_hat = real(vk_hat);
+vQk_hat = imag(vk_hat);
+for x = 1:length(vk_hat)
+    xk_hat = [xk_hat,vIk_hat(x),vQk_hat(x)];
+end
+
+xk_hat = sign(xk_hat);
 xk_hat = (xk_hat>0);
 xk_hat = reshape(xk_hat,1,length(xk_hat));
-xk_hat_rot = sign(vk_rot_hat);
-xk_hat_rot = (xk_hat_rot>0);
-xk_hat_rot = reshape(xk_hat_rot,1,length(xk_hat_rot));
 
-msg_hat = xk_hat;
-msg_hat_rot = xk_hat_rot;
+msg_hat = xk_hat(1:100);
 
 %% Plot
 
 figure(14)
 subplot(2,2,[3,4])
+%stem(real(vk_all),'b')
 stem(real(vk_all_rot),'b')
 box on;
 grid on;
 hold on;
-stem(imag(vk_all_rot),'r')
+%stem(imag(vk_all),'r')
+stem(imag(vk_all_rot)*2-1,'r')
+%stem(real(vk_all_rot),'g')
+%stem(imag(vk_all_rot),'y--')
+stem(bits(1:2:end)*2-1,'g')
+stem(bits(2:2:end)*2-1,'y--')
 legend('vIk','vQk')
 title('All of vk')
 
@@ -725,17 +705,14 @@ length(msg_hat)
 msg_size
 img_size = imdim(1)*imdim(2)
 msg_hat_img = msg_hat(1:img_size);
-msg_hat_img_rot = msg_hat_rot(1:img_size);
 
 length(msg_hat)
 msg_size
 img_size = imdim(1)*imdim(2)
 msg_hat_img = msg_hat(1:img_size);
-msg_hat_img_rot = msg_hat_rot(1:img_size);
 
 bits_err = reshape(bits,imdim);
-msg_hat_err = reshape(msg_hat_img_rot,imdim);
-
+msg_hat_err = reshape(msg_hat_img,imdim);
 
 error_img = zeros(imdim(1),imdim(2),3);
 
@@ -770,10 +747,6 @@ disp(' ')
 disp(['Your BER is: ' num2str(BER)])
 disp(' ')
 
-BER_rot = mean(msg_hat_img_rot ~= bits);
-disp(['Your BER_rot is: ' num2str(BER_rot)])
-disp(' ')
-
 %Maybe figure out how to write the text outputs onto the graph?
 %Also figure out how to graph the locations of the pilots and messages in
 %the large zk graph
@@ -786,14 +759,9 @@ imshow(reshape(bits,imdim))
 title('Desired Image')
 set(gca,'fontsize', 15)
 subplot(1,3,2)
-imshow(reshape(msg_hat_img,imdim))
+imshow(error_img)
 title('Received Image')
 xlabel(['BER is: ' num2str(BER)])
-set(gca,'fontsize', 15)
-subplot(1,3,3)
-imshow(error_img)
-title('Rotated Image')
-xlabel(['BER is: ' num2str(BER_rot)])
 set(gca,'fontsize', 15)
 
 %pause();

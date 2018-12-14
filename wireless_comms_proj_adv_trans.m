@@ -7,7 +7,7 @@
 %% --Main Transmit Code-- %%
 
 clear
-%close all
+close all
 %clc
 % Set seed for random number generator (for repeatability of simulation)
 %rng('default');
@@ -126,25 +126,25 @@ x_base = xI_base + j * xQ_base;
 [x_spread, spreading_mask] = spread_msg(x_base);
 
 freq_spread_start = 1;
-freq_spread_end = (freq_preamble/2)*spreading_gain;
+freq_spread_end = (freq_preamble/2)*spreading_gain - 1;
 freq_spread = x_spread(freq_spread_start : freq_spread_end);
 
 timing_spread_start = freq_spread_end + 1;
-timing_spread_end = timing_spread_start + (timing_preamble/2)*spreading_gain;
+timing_spread_end = timing_spread_start + (timing_preamble/2)*spreading_gain - 1;
 timing_spread = x_spread(timing_spread_start : timing_spread_end);
 
 pilot_spread_start = timing_spread_end + 1;
-pilot_spread_end = pilot_spread_start + (pilot_size/2)*spreading_gain;
+pilot_spread_end = pilot_spread_start + (pilot_size/2)*spreading_gain - 1;
 pilot_spread = x_spread(pilot_spread_start : pilot_spread_end);
 
 msg_spread = zeros((msg_size/2)*spreading_gain,1);
 
 pilot_2_start = pilot_spread_end + (msg_size/2)*spreading_gain + 1;
-pilot_2_end = pilot_2_start + (pilot_size/2)*spreading_gain;
+pilot_2_end = pilot_2_start + (pilot_size/2)*spreading_gain - 1;
 pilot_2 = x_spread(pilot_2_start : pilot_2_end);
 
 pilot_3_start = pilot_2_end + (msg_size/2)*spreading_gain + 1;
-pilot_3_end = pilot_3_start + (pilot_size/2)*spreading_gain;
+pilot_3_end = pilot_3_start + (pilot_size/2)*spreading_gain - 1;
 pilot_3 = x_spread(pilot_3_start : end);
 
 pilot_plot = pilot_plot(1:2:end) + j * pilot_plot(2:2:end);
@@ -183,15 +183,18 @@ pilot_plot = pilot_plot/max(abs(pilot_plot));
 pilot_plot = pilot_plot*pwr;
 pilot_plot = reshape(pilot_plot, [], 1);
 
-pilot_spread_len = len(pilot_spread);
-pilot_spread
+freq_spread_len = length(freq_spread);
+timing_spread_len = length(timing_spread);
+pilot_spread_len = length(pilot_spread);
+msg_spread_len = length(msg_spread);
 
 save('transmitsignal.mat','transmitsignal')
 
 % save for analysis in receive
 save global_vars.mat d fs Ts fc Tc T_sym F_sym symLen a p timing pilot msg ...
     N Ns num_msg pilot_plot bits imdim msg_size ...
-    spreading_gain spreading_mask timing_spread
+    spreading_gain spreading_mask freq_spread_len timing_spread ...
+    timing_spread_len pilot_spread_len msg_spread_len
 
 if srrc == 1
     save('transmitsignal_SRRC.mat','transmitsignal')

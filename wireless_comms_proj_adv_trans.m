@@ -235,9 +235,10 @@ if showplot == 1
     xlabel('Time in samples')
     title('Transmitted Signal')
     set(gca,'fontsize', 15)
-    %%% please add this as a plot
     
     figure(3)
+    LargeFigure(gcf, 0.15); % Make figure large
+    clf
     plot(real(transmitsignal1),'Color',[0,0,0.7])
     hold on
     plot(imag(transmitsignal1),'Color',[0,0,0.5])

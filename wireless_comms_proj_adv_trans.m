@@ -171,7 +171,7 @@ transmitsignal3 = [zeros(rand3,1); transmitsignal; zeros(rand4-rand3,1)]*pwr*0.9
 
 transmitsignal4 = [zeros(rand4,1); transmitsignal]*pwr*0.85;
 
-%transmitsignal = (transmitsignal1 + transmitsignal2 + transmitsignal3)/3;% + transmitsignal4)/4;
+transmitsignal = (transmitsignal1 + transmitsignal2 + transmitsignal3)/3;% + transmitsignal4)/4;
 
 transmitsignal = reshape(transmitsignal, [], 1);
 

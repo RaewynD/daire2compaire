@@ -41,7 +41,7 @@ else
     receivedsignal = trans + sigma/sqrt(2)*(randn(size(trans))+j*randn(size(trans)));
 end
 
-receivedsignal = trans;
+%receivedsignal = trans;
 
 global spreading_gain spreading_mask timing_spread pilot_spread
 

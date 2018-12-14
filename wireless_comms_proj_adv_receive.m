@@ -12,15 +12,19 @@ rng('default');
 
 % Define User Values
 rake = 0; % set rake to 1 to have adding right after timing, 0 to have adding with de-spreading
-real_time = 1; % set to 1 for real time, 0 for AWGN
+real_time = 0; % set to 1 for real time, 0 for AWGN
 if real_time == 1
+    rot = pi/4;
     max_min = 1e5;
+    freq_est_start = 100;
+    freq_est_end = freq_est_start+1000;
 else
+    rot = 7*pi/4;
     max_min = 2e5;
+    freq_est_start = 1;
+    freq_est_end = freq_est_start+1000;
 end
 noise = 10;
-freq_est_start = 5000;
-freq_est_end = freq_est_start+1000;
 
 load transmitsignal.mat
 
@@ -36,6 +40,8 @@ else
     trans = [randn(floor(randn(1)*10),1);transmitsignal];
     receivedsignal = trans + sigma/sqrt(2)*(randn(size(trans))+j*randn(size(trans)));
 end
+
+receivedsignal = trans;
 
 global spreading_gain spreading_mask timing_spread pilot_spread
 
@@ -108,7 +114,7 @@ set(gca,'fontsize',15);
 
 delta_hat = (1/Ts) * freq;
 
-y_received = exp(-j*2*pi*delta_hat*Ts) * y_received;
+%y_received = exp(-j*2*pi*delta_hat*Ts) * y_received;
 
 %% --Apply Timing Recovery-- %%
 
@@ -466,18 +472,21 @@ if rake == 0
     if num_max > 3
         zk_orig4 = zk4;
 
+        vk_all_despread4 = [];
         vk_all4 = [];
         ho_hat_pops4 = [];
     end
     if num_max > 2
         zk_orig3 = zk3;
 
+        vk_all_despread3 = [];
         vk_all3 = [];
         ho_hat_pops3 = [];
     end
     if num_max > 1
         zk_orig2 = zk2;
 
+        vk_all_despread2 = [];
         vk_all2 = [];
         ho_hat_pops2 = [];
     end
@@ -486,12 +495,13 @@ end
 zk_orig = zk;
 msg_mask_orig = msg_mask_eq;
 
-zk_pilot_start = 2;
-zk_pilot_end = zk_pilot_start + pilot_spread_len;
+zk_pilot_start = 1;
+zk_pilot_end = zk_pilot_start + pilot_spread_len - 1;
 zk_msg_start = zk_pilot_end + 1;
 zk_msg_end = zk_msg_start + msg_spread_len - 1;
 zk_start = zk_msg_end + 1;
 
+vk_all_despread = [];
 vk_all = [];
 ho_hat_pops = [];
 
@@ -510,7 +520,7 @@ for cnt = 1:num_msg
             zk_pilot4 = zk4(zk_pilot_start : zk_pilot_end);
             zk_msg4 = zk4(zk_msg_start : zk_msg_end);
             
-            ho_hat4_base = dot(zk_pilot4, msgk_pilot_mask)/norm(msgk_pilot_mask)^2;
+            ho_hat4_base = dot(msgk_pilot_mask, zk_pilot4)/norm(msgk_pilot_mask)^2;
             ho_hat4 = conj(ho_hat4_base);
             ho_hat_pops4 = [ho_hat_pops4,ho_hat4_base];
             
@@ -518,25 +528,27 @@ for cnt = 1:num_msg
             
             vk_msg_spread4 = [];
             for x = 0:msg_size/2-1
-                bit_start = x*spreading_gain+1;
-                bit_end = (x+1)*spreading_gain;
-                vk_bit_spread = zk_msg4(bit_start : bit_end)' / msgk_mask(bit_start : bit_end)';
-                vk_msg_spread4 = [vk_msg_spread4 ; vk_bit_spread];
+                sym_start = x*spreading_gain+1;
+                sym_end = (x+1)*spreading_gain;
+                vk_sym_spread = zk_msg4(sym_start : sym_end) .* msgk_mask(sym_start : sym_end);
+                vk_sym_despread = sum(vk_sym_spread);
+                vk_msg_spread4 = [vk_msg_spread4 ; vk_sym_despread];
             end
             
-            vk4 = ho_hat4_base * vk_msg_spread4;
+            vk4 = ho_hat4 * vk_msg_spread4;
             %vk4 = vk_msg_spread4;
             
             zk4 = zk4(zk_start : end);
             disp(['The size of zk4 is: ' num2str(size(zk4))])
 
+            vk_all_despread2 = [vk_all_despread2, vk_msg_spread2];
             vk_all4 = [vk_all4; vk4];     
         end
         if num_max > 2
             zk_pilot3 = zk3(zk_pilot_start : zk_pilot_end);
             zk_msg3 = zk3(zk_msg_start : zk_msg_end);
             
-            ho_hat3_base = dot(zk_pilot3, msgk_pilot_mask)/norm(msgk_pilot_mask)^2;
+            ho_hat3_base = dot(msgk_pilot_mask, zk_pilot3)/norm(msgk_pilot_mask)^2;
             ho_hat3 = conj(ho_hat3_base);
             ho_hat_pops3 = [ho_hat_pops3,ho_hat3];
             
@@ -544,25 +556,27 @@ for cnt = 1:num_msg
             
             vk_msg_spread3 = [];
             for x = 0:msg_size/2-1
-                bit_start = x*spreading_gain+1;
-                bit_end = (x+1)*spreading_gain;
-                vk_bit_spread = zk_msg3(bit_start : bit_end)' / msgk_mask(bit_start : bit_end)';
-                vk_msg_spread3 = [vk_msg_spread3 ; vk_bit_spread];
+                sym_start = x*spreading_gain+1;
+                sym_end = (x+1)*spreading_gain;
+                vk_sym_spread = zk_msg3(sym_start : sym_end) .* msgk_mask(sym_start : sym_end);
+                vk_sym_despread = sum(vk_sym_spread);
+                vk_msg_spread3 = [vk_msg_spread3 ; vk_sym_despread];
             end
             
-            vk3 = ho_hat3_base * vk_msg_spread3;
+            vk3 = ho_hat3 * vk_msg_spread3;
             %vk3 = vk_msg_spread3;
             
             zk3 = zk3(zk_start : end);
             disp(['The size of zk3 is: ' num2str(size(zk3))])
 
+            vk_all_despread3 = [vk_all_despread3, vk_msg_spread3];
             vk_all3 = [vk_all3; vk3];
         end
         if num_max > 1
             zk_pilot2 = zk2(zk_pilot_start : zk_pilot_end);
             zk_msg2 = zk2(zk_msg_start : zk_msg_end);
             
-            ho_hat2_base = dot(zk_pilot2, msgk_pilot_mask)/norm(msgk_pilot_mask)^2;
+            ho_hat2_base = dot(msgk_pilot_mask, zk_pilot2)/norm(msgk_pilot_mask)^2;
             ho_hat2 = conj(ho_hat2_base);
             ho_hat_pops2 = [ho_hat_pops2,ho_hat2];
             
@@ -570,26 +584,28 @@ for cnt = 1:num_msg
             
             vk_msg_spread2 = [];
             for x = 0:msg_size/2-1
-                bit_start = x*spreading_gain+1;
-                bit_end = (x+1)*spreading_gain;
-                vk_bit_spread = zk_msg2(bit_start : bit_end)' / msgk_mask(bit_start : bit_end)';
-                vk_msg_spread2 = [vk_msg_spread2 ; vk_bit_spread];
+                sym_start = x*spreading_gain+1;
+                sym_end = (x+1)*spreading_gain;
+                vk_sym_spread = zk_msg2(sym_start : sym_end) .* msgk_mask(sym_start : sym_end);
+                vk_sym_despread = sum(vk_sym_spread);
+                vk_msg_spread2 = [vk_msg_spread2 ; vk_sym_despread];
             end
             
-            vk2 = ho_hat2_base * vk_msg_spread2;
+            vk2 = ho_hat2 * vk_msg_spread2;
             %vk2 = vk_msg_spread3;
             
             zk2 = zk2(zk_start : end);
             disp(['The size of zk2 is: ' num2str(size(zk2))])
 
-            vk_all2 = [vk_all2; vk2];     
+            vk_all_despread2 = [vk_all_despread2, vk_msg_spread2];
+            vk_all2 = [vk_all2; vk2];    
         end
     end
 
     zk_pilot = zk(zk_pilot_start : zk_pilot_end);
     zk_msg = zk(zk_msg_start : zk_msg_end);
 
-    ho_hat_base = dot(zk_pilot, msgk_pilot_mask)/norm(msgk_pilot_mask)^2;
+    ho_hat_base = dot(msgk_pilot_mask, zk_pilot)/norm(msgk_pilot_mask)^2;
     ho_hat = conj(ho_hat_base);
     ho_hat_pops = [ho_hat_pops,ho_hat];
             
@@ -597,18 +613,20 @@ for cnt = 1:num_msg
 
     vk_msg_spread = [];
     for x = 0:msg_size/2-1
-        bit_start = x*spreading_gain+1;
-        bit_end = (x+1)*spreading_gain;
-        vk_bit_spread = zk_msg(bit_start : bit_end)' / msgk_mask(bit_start : bit_end)';
-        vk_msg_spread = [vk_msg_spread ; vk_bit_spread];
+        sym_start = x*spreading_gain+1;
+        sym_end = (x+1)*spreading_gain;
+        vk_sym_spread = zk_msg(sym_start : sym_end) .* msgk_mask(sym_start : sym_end);
+        vk_sym_despread = sum(vk_sym_spread);
+        vk_msg_spread = [vk_msg_spread ; vk_sym_despread];
     end
 
-    vk = ho_hat_base * vk_msg_spread;
+    vk = ho_hat * vk_msg_spread;
     %vk = vk_msg_spread;
     
     zk = zk(zk_start : end);
     disp(['The size of zk is: ' num2str(size(zk))])
 
+    vk_all_despread = [vk_all_despread, vk_msg_spread];
     vk_all = [vk_all; vk];
     
     msg_mask_eq = msg_mask_eq(zk_start : end);
@@ -618,13 +636,13 @@ end
 
 vk_all = vk_all / max(vk_all);
 vk_all_rot = vk_all;
-vk_all_rot = vk_all * exp(j*pi/4);
-for x = 1:length(vk_all_rot)
-    if (((real(vk_all_rot(x)) > 0) && (imag(vk_all_rot(x)) > 0)) || ...
-            ((real(vk_all_rot(x)) < 0) && (imag(vk_all_rot(x)) < 0)))
-        vk_all_rot(x) = -vk_all_rot(x);
-    end
-end
+% vk_all_rot = vk_all * exp(j*rot);
+% for x = 1:length(vk_all_rot)
+%     if (((real(vk_all_rot(x)) > 0) && (imag(vk_all_rot(x)) > 0)) || ...
+%             ((real(vk_all_rot(x)) < 0) && (imag(vk_all_rot(x)) < 0)))
+%         vk_all_rot(x) = -vk_all_rot(x);
+%     end
+% end
 
 vk_all = vk_all_rot;
 

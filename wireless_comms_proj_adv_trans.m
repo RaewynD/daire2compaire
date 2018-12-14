@@ -171,7 +171,7 @@ transmitsignal3 = [zeros(rand3,1); transmitsignal; zeros(rand4-rand3,1)]*pwr*0.9
 
 transmitsignal4 = [zeros(rand4,1); transmitsignal]*pwr*0.85;
 
-transmitsignal = (transmitsignal1 + transmitsignal2 + transmitsignal3)/3;% + transmitsignal4)/4;
+%transmitsignal = (transmitsignal1 + transmitsignal2 + transmitsignal3)/3;% + transmitsignal4)/4;
 
 transmitsignal = reshape(transmitsignal, [], 1);
 
@@ -304,21 +304,22 @@ end
 %% ---Helper Functions--- %%
 
 % spread code
-function [spreaded_bits,spread_mask] = spread_msg(msg)
+function [spreaded_sym,spread_mask] = spread_msg(msg)
 
     global spreading_gain
 
     len = length(msg);
     
-    spreaded_bits = [];
+    spreaded_sym = [];
     spread_mask = [];
     
     for x = 1:len
         spread = get_bits(3)';
-        spread_mask = [spread_mask;spread];
+        spread = spread * 2 - 1;
         
         spread = msg(x)*spread;
-        spreaded_bits = [spreaded_bits;spread];
+        spreaded_sym = [spreaded_sym;spread];
+        spread_mask = [spread_mask;spread];
     end
 
 end

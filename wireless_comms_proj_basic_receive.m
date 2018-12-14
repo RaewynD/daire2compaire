@@ -12,8 +12,8 @@ rng('default');
 
 % Define User Values
 srrc = 1; % "1" for SRRC to be on. "0" for rectangular pulse.
-real_time = 0; % "1" for Tx/Rx to be on. "0" for AWGN. (must be opposite AWGN)
-AWGN = 1; % "1" for AWGN to be on. "0" for AWGN off. (must be opposite real_time)
+real_time = 1; % "1" for Tx/Rx to be on. "0" for AWGN. (must be opposite AWGN)
+AWGN = 0; % "1" for AWGN to be on. "0" for AWGN off. (must be opposite real_time)
 graph = 1; % "1" for graphs to be on. "0" for them to be off.
 
 % Loads files from the transmitter file
@@ -312,7 +312,7 @@ if graph == 1
     stem(zIk_with_timing_up_plot,'r') 
     plot(timingI_sent_plot./10e11,'g')
     plot(zI_sans_timing_plot,'y')
-    title('Post LPF signal z^I and sampled z_k^I')
+    title('z^I and sampled z_k^I')
     legend('z^I','z_k^I - no timing','timing signal - real','z_k^I - with timing','location','northeastoutside')
     set(gca,'fontsize', 15)
     zz(2) = subplot(3,1,2);
@@ -322,7 +322,7 @@ if graph == 1
     stem(zQk_with_timing_up_plot,'r') 
     plot(timingQ_sent_plot./10e11,'g')
     plot(zQ_sans_timing_plot,'y')
-    title('Post LPF signal z^Q and sampled z_k^Q')
+    title('z^Q and sampled z_k^Q')
     legend('z^Q','z_k^Q - no timing','timing signal - imag','z_k^Q - with timing','location','northeastoutside')
     set(gca,'fontsize', 15)
     subplot(3,1,3)

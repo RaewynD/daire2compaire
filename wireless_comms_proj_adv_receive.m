@@ -63,33 +63,92 @@ y_received = receivedsignal;
 
 %% Plot
 
-graph = 0;
+% graph = 0;
+% 
+% figure(8)
+% LargeFigure(gcf, 0.15); % Make figure large
+% clf
+% 
+% subplot(3,1,1)
+% plot(w)
+% title('Matched Filter')
+% set(gca,'fontsize', 15)
+% 
+% s1(1) = subplot(3,1,2)
+% plot(real(x_transmitted),'b')
+% hold on;
+% plot(imag(x_transmitted),'r')
+% plot(imag(pilot_plot),'y')
+% plot(real(pilot_plot),'g')
+% title('Transmitted Signal')
+% set(gca,'fontsize', 15)
+% 
+% s1(2) = subplot(3,1,3)
+% plot(real(y_received),'Color',[0,0,0.7])
+% hold on
+% plot(imag(y_received),'Color',[0,0,0.5])
+% 
+% title('Received Signal')
+% set(gca,'fontsize', 15)
 
-figure(8)
-LargeFigure(gcf, 0.15); % Make figure large
-clf
+graph = 1;
 
-subplot(3,1,1)
-plot(w)
-title('Matched Filter')
-set(gca,'fontsize', 15)
+J = 2;
 
-s1(1) = subplot(3,1,2)
-plot(real(x_transmitted),'b')
-hold on;
-plot(imag(x_transmitted),'r')
-plot(imag(pilot_plot),'y')
-plot(real(pilot_plot),'g')
-title('Transmitted Signal')
-set(gca,'fontsize', 15)
+if graph == 1
+    
+    figure(J)
+    LargeFigure(gcf, 0.15); % Make figure large
+    clf
+    subplot(3,2,1); %Filter
+    plot([1:length(p)]/fs,w)
+    ylabel('$p^{transmit}(t)$')
+    title('Pulse Signal p(t)')
+    set(gca,'fontsize', 15)
+    subplot(3,2,2); %Frequency response of filter
+    plot([-lenp/2+1:lenp/2]/lenp*fs,20*log10(abs(fftshift(1/sqrt(lenp)*fft(w)))))
+    ylabel('$|P^{transmit}(f)|$')
+    xlabel('Frequency')
+    title('Frequency Response of Pulse')
+    axis([-4*fc 4*fc -Inf Inf])
+    set(gca,'fontsize', 15)
+    subplot(3,2,3); %Transmitted Signal
+    plot(real(x_transmitted),'b')
+    hold on;
+    plot(imag(x_transmitted),'r')
+    plot(imag(pilot_plot),'y')
+    plot(real(pilot_plot),'g')
+    ylabel('$x^{I}(t)$, $x^{Q}(t)$')
+    xlabel('Time in samples')
+    legend('real','imag')
+    title('Transmitted Signal')
+    set(gca,'fontsize', 15)
+    subplot(3,2,4); %Signal Frequency Response
+    plot([0:length(transmitsignal)-1]/length(transmitsignal)-0.5, abs(fftshift(fft(transmitsignal))))
+    ylabel('$|X^{base}(f)|$')
+    xlabel('Frequency in 1/samples')
+    title('Transimt Signal in Frequency Domain')
+    set(gca,'fontsize', 15)
+    subplot(3,2,5);
+    plot(real(y_received),'b')
+    hold on;
+    plot(imag(y_received),'r')
+    legend('real','imag')
+    ylabel('$y^{I}(t)$,  $y^{Q}(t)$')
+    xlabel('Time in samples')
+    title('Received Signal')
+    set(gca,'fontsize', 15)
+    subplot(3,2,6)
+    plot([0:length(receivedsignal)-1]/length(receivedsignal)-0.5, abs(fftshift(fft(receivedsignal))))
+    ylabel('$|Y^{base}(f)|$')
+    xlabel('Frequency in 1/samples')
+    title('Received Signal in Frequency Domain')
+    set(gca,'fontsize', 15)
 
-s1(2) = subplot(3,1,3)
-plot(real(y_received),'Color',[0,0,0.7])
-hold on
-plot(imag(y_received),'Color',[0,0,0.5])
+    J = J+1;
 
-title('Received Signal')
-set(gca,'fontsize', 15)
+end
+
 
 %linkaxes(s1,'x');
 
@@ -101,14 +160,34 @@ disp(' ')
 
 %% --Apply Frequency Sync-- %%
 
-figure(1)
-hold on;
-freq_est = y_received(freq_est_start : freq_est_end);
-freq_dom = abs(fftshift(fft(freq_est)));
-plot([0:length(freq_est)-1]/length(freq_est)-0.5, freq_dom, 'b')
+% figure(1)
+% hold on;
+% freq_est = y_received(freq_est_start : freq_est_end);
+% freq_dom = abs(fftshift(fft(freq_est)));
+% plot([0:length(freq_est)-1]/length(freq_est)-0.5, freq_dom, 'b')
+% 
+% title('Frequency');
+% set(gca,'fontsize',15);
 
-title('Frequency');
-set(gca,'fontsize',15);
+
+if graph == 1
+
+    figure(J)
+    LargeFigure(gcf, 0.15); % Make figure large
+    clf
+    hold on;
+    grid on;
+    box on;
+    freq_est = y_received(freq_est_start : freq_est_end);
+    freq_dom = abs(fftshift(fft(freq_est)));
+    plot([0:length(freq_est)-1]/length(freq_est)-0.5, freq_dom, 'b')
+    title('Frequency Response from DTFT to estimate \Delta');
+    set(gca,'fontsize',15);
+    
+    J = J + 1;
+    
+end
+
 
 [~, freq] = max(freq_dom);
 
@@ -128,8 +207,25 @@ timing_sent = reshape(timing_sent, [], 1);
 [corr_time, corr_tau_time] = xcorr(timing_sent,y_received);
 %[max1, offset_time1] = max(abs(corr_time1));
 %[max2, offset_time2] = max(abs(corr_time1(abs(corr_time1)<max1)));
-figure()
-findpeaks(abs(corr_time));
+% figure()
+% findpeaks(abs(corr_time));
+
+if graph == 1
+    
+    figure(J)
+    LargeFigure(gcf, 0.15); % Make figure large
+    clf
+    findpeaks(abs(corr_time));
+    box on;
+    grid on;
+    ylabel('$y^{base}(t)$')
+    title('Peak detection for Timing Recovery to create RAKE')
+    set(gca,'fontsize',15);
+    
+    J = J+1;
+    
+end
+    
 
 %% --Rake-- %%
 
@@ -199,45 +295,99 @@ end
     
 %% Plot
 
-figure(10)
-LargeFigure(gcf, 0.15); % Make figure large
-clf
-subplot(3,2,1)
-stem(timing)
-title('Timing Signal')
-set(gca,'fontsize', 15)
-subplot(3,2,2)
-scatter(real(timing_sent),imag(timing_sent))
-title('Quantized Timing')
-set(gca,'fontsize', 15)
-subplot(3,2,5)
-plot(real(y_received),'b')
-hold on;
-plot(imag(y_received),'r')
-title('Received Signal')
-set(gca,'fontsize', 15)
-subplot(3,2,3)
-plot(abs(corr_time),'b')
-%hold on
-%plot(abs(corr_time2),'r')
-%plot(abs(corr_time3),'g')
-%plot(abs(corr_time4),'y')
-title('Time Correlation (Time)')
-set(gca,'fontsize', 15)
-subplot(3,2,4)
-plot(corr_tau_time,'b')
-%hold on
-%plot(corr_tau_time2,'r')
-%plot(corr_tau_time3,'g')
-%plot(corr_tau_time4,'y')
-title('Time Correlation (Time Tau)')
-set(gca,'fontsize', 15)
-subplot(3,2,6)
-plot(real(y_received_timing),'b')
-hold on;
-plot(imag(y_received_timing),'r')
-title('Y - Time Recovered')
-set(gca,'fontsize', 15)
+% figure(10)
+% LargeFigure(gcf, 0.15); % Make figure large
+% clf
+% subplot(3,2,1)
+% stem(timing)
+% title('Timing Signal')
+% set(gca,'fontsize', 15)
+% subplot(3,2,2)
+% scatter(real(timing_sent),imag(timing_sent))
+% title('Quantized Timing')
+% set(gca,'fontsize', 15)
+% subplot(3,2,5)
+% plot(real(y_received),'b')
+% hold on;
+% plot(imag(y_received),'r')
+% title('Received Signal')
+% set(gca,'fontsize', 15)
+% subplot(3,2,3)
+% plot(abs(corr_time),'b')
+% %hold on
+% %plot(abs(corr_time2),'r')
+% %plot(abs(corr_time3),'g')
+% %plot(abs(corr_time4),'y')
+% title('Time Correlation (Time)')
+% set(gca,'fontsize', 15)
+% subplot(3,2,4)
+% plot(corr_tau_time,'b')
+% %hold on
+% %plot(corr_tau_time2,'r')
+% %plot(corr_tau_time3,'g')
+% %plot(corr_tau_time4,'y')
+% title('Time Correlation (Time Tau)')
+% set(gca,'fontsize', 15)
+% subplot(3,2,6)
+% plot(real(y_received_timing),'b')
+% hold on;
+% plot(imag(y_received_timing),'r')
+% title('Y - Time Recovered')
+% set(gca,'fontsize', 15)
+
+if graph == 1
+
+    figure(J)
+    LargeFigure(gcf, 0.15); % Make figure large
+    clf
+    h(1) = subplot(3,2,1);
+    scatter(real(timing_sent),imag(timing_sent))
+    box on;
+    line([0 0], ylim)
+    line(xlim, [0 0])
+    ylabel('$Timing^Q(t)$')
+    xlabel('$Timing^I(t)$')
+    title('Timing Signal - Complexspace')
+    set(gca,'fontsize', 15)
+    h(2) = subplot(3,2,2);
+    plot(abs(corr_time))
+    box on;
+    ylabel('$y^{base}(t)$')
+    title('Absolute Value Plot of the Time Correlation')
+    set(gca,'fontsize', 15)
+    h(3) = subplot(3,2,3);
+    plot(corr_tau_time)
+    box on;
+    title('Time Correlation \tau')
+    set(gca,'fontsize', 15)
+    h(4) = subplot(3,2,4);
+    scatter(real(y_received_timing),imag(y_received_timing))
+    ylabel('$y^Q(t)$')
+    xlabel('$y^I(t)$')
+    box on;
+    line([0 0], ylim)
+    line(xlim, [0 0])
+    title('$y(t)$ Recovered - Complexspace')
+    set(gca,'fontsize', 15)
+    h(5) = subplot(3,2,5);
+    plot(real(y_received_timing),'b')
+    hold on;
+    plot(imag(y_received_timing),'r')
+    pos = get(h,'Position');
+    new = mean(cellfun(@(v)v(1),pos(1:2)));
+    set(h(5),'Position',[new,pos{end}(2:end)])
+    box on;
+    zoom on;
+    legend('real','imag')
+    ylabel('Received Signal')
+    xlabel('Time in samples')
+    title('$y(t)$ Time Recovered Signal')
+    set(gca,'fontsize', 15)
+
+    J = J+1;
+
+end
+
 
 y_received = y_received_timing;
 
@@ -306,24 +456,55 @@ z_test = conv(w,y_received_timing)*(1/fs);
 
 %% Plot
 
-figure(11)
-LargeFigure(gcf, 0.15); % Make figure large
-clf
-subplot(2,1,1)
-plot(zI,'b')
-hold on;
-plot(zQ,'r')
-title('Post LPF')
-set(gca,'fontsize', 15)
-subplot(2,1,2)
-scatter(zI,zQ)
-box on;
-grid on;
-hold on;
-line([0 0], ylim)
-line(xlim, [0 0])
-title('Post LPF in bitspace')
-set(gca,'fontsize', 15)
+% figure(11)
+% LargeFigure(gcf, 0.15); % Make figure large
+% clf
+% subplot(2,1,1)
+% plot(zI,'b')
+% hold on;
+% plot(zQ,'r')
+% title('Post LPF')
+% set(gca,'fontsize', 15)
+% subplot(2,1,2)
+% scatter(zI,zQ)
+% box on;
+% grid on;
+% hold on;
+% line([0 0], ylim)
+% line(xlim, [0 0])
+% title('Post LPF in bitspace')
+% set(gca,'fontsize', 15)
+
+if graph == 1
+    
+    figure(J)
+    LargeFigure(gcf, 0.15); % Make figure large
+    clf
+    subplot(2,1,1)
+    plot(zI,'b')
+    hold on;
+    plot(zQ,'r')
+    ylabel('Received Signal')
+    xlabel('Time in samples')
+    legend('real','imag')
+    title('y_{base}(t) - Post Matched Filter')
+    set(gca,'fontsize', 15)
+    subplot(2,1,2)
+    scatter(zI,zQ)
+    box on;
+    grid on;
+    hold on;
+    line([0 0], ylim)
+    line(xlim, [0 0])
+    ylabel('$z^Q(t)$')
+    xlabel('$z^I(t)$')
+    title('y_{base}(t) - Post Matched Filter in Complexspace')
+    set(gca,'fontsize', 15)
+
+    J = J+1;
+
+end
+
 
 %% --Sample filtered signal - starts falling apart here-- %%
 
@@ -368,37 +549,79 @@ len_timingQ = length(timingQ_sent_plot) - length(w);
 zQ_sans_timing = zQ(len_timingQ : end);
 zQ_sans_timing_plot = [zeros(len_timingQ-1, 1); zQ_sans_timing];
 
-figure(12)
-LargeFigure(gcf, 0.15); % Make figure large
-clf
-zz(1) = subplot(3,1,1);
-zoom on;
-plot(zI,'b') 
-hold on;
-stem(zIk_with_timing_up_plot,'r') 
-plot(timingI_sent_plot./10e11,'g')
-plot(zI_sans_timing_plot,'y')
-title('Post LPF signal (zI) and sampled (zIk)')
-set(gca,'fontsize', 15)
-zz(2) = subplot(3,1,2);
-zoom on;
-plot(zQ,'b') 
-hold on; 
-stem(zQk_with_timing_up_plot,'r') 
-plot(timingQ_sent_plot./10e11,'g')
-plot(zQ_sans_timing_plot,'y')
-title('Post LPF signal (zQ) and sampled (zQk)')
-set(gca,'fontsize', 15)
-subplot(3,1,3)
-scatter(zIk_with_timing,zQk_with_timing)
-box on;
-grid on;
-hold on;
-line([0 0], ylim)
-line(xlim, [0 0])
-title('Complexspace of zk')
-set(gca,'fontsize', 15)
-linkaxes(zz,'x')
+% figure(12)
+% LargeFigure(gcf, 0.15); % Make figure large
+% clf
+% zz(1) = subplot(3,1,1);
+% zoom on;
+% plot(zI,'b') 
+% hold on;
+% stem(zIk_with_timing_up_plot,'r') 
+% plot(timingI_sent_plot./10e11,'g')
+% plot(zI_sans_timing_plot,'y')
+% title('Post LPF signal (zI) and sampled (zIk)')
+% set(gca,'fontsize', 15)
+% zz(2) = subplot(3,1,2);
+% zoom on;
+% plot(zQ,'b') 
+% hold on; 
+% stem(zQk_with_timing_up_plot,'r') 
+% plot(timingQ_sent_plot./10e11,'g')
+% plot(zQ_sans_timing_plot,'y')
+% title('Post LPF signal (zQ) and sampled (zQk)')
+% set(gca,'fontsize', 15)
+% subplot(3,1,3)
+% scatter(zIk_with_timing,zQk_with_timing)
+% box on;
+% grid on;
+% hold on;
+% line([0 0], ylim)
+% line(xlim, [0 0])
+% title('Complexspace of zk')
+% set(gca,'fontsize', 15)
+% linkaxes(zz,'x')
+
+if graph == 1
+
+    figure(J)
+    LargeFigure(gcf, 0.15); % Make figure large
+    clf
+    zz(1) = subplot(3,1,1);
+    zoom on;
+    plot(zI,'b') 
+    hold on;
+    stem(zIk_with_timing_up_plot,'r') 
+    plot(timingI_sent_plot./10e11,'g')
+    plot(zI_sans_timing_plot,'y')
+    title('z^I and sampled z_k^I')
+    legend('z^I','z_k^I - no timing','timing signal - real','z_k^I - with timing','location','northeastoutside')
+    set(gca,'fontsize', 15)
+    zz(2) = subplot(3,1,2);
+    zoom on;
+    plot(zQ,'b') 
+    hold on; 
+    stem(zQk_with_timing_up_plot,'r') 
+    plot(timingQ_sent_plot./10e11,'g')
+    plot(zQ_sans_timing_plot,'y')
+    title('z^Q and sampled z_k^Q')
+    legend('z^Q','z_k^Q - no timing','timing signal - imag','z_k^Q - with timing','location','northeastoutside')
+    set(gca,'fontsize', 15)
+    subplot(3,1,3)
+    scatter(zIk_with_timing,zQk_with_timing)
+    box on;
+    grid on;
+    hold on;
+    line([0 0], ylim)
+    line(xlim, [0 0])
+    ylabel('$z_k^Q$')
+    xlabel('$z_k^I$')
+    title('Complexspace of zk')
+    set(gca,'fontsize', 15)
+    linkaxes(zz,'x')
+
+    J = J+1;
+
+end
 
 %% --Remove Timing Preamble-- %%
 
@@ -505,9 +728,13 @@ vk_all_despread = [];
 vk_all = [];
 ho_hat_pops = [];
 
-figure(14)
-LargeFigure(gcf, 0.15); % Make figure large
-clf
+if graph == 1
+    
+    figure(J)
+    LargeFigure(gcf, 0.15); % Make figure large
+    clf
+    
+end
 
 for cnt = 1:num_msg
     
@@ -655,7 +882,22 @@ vk_all = vk_all_rot;
         expectedQ(x) = expectedQ(x)+rand()/4;
     end
     
-    figure(14)
+%     figure(14)
+%     cs = subplot(2,2,[1,2]);
+%     scatter(real(vk_all),imag(vk_all),'b');
+%     hold on;
+%     scatter(real(vk_all_rot),imag(vk_all_rot),'r');
+%     scatter(expectedI,expectedQ,'g');
+%     box on;
+%     grid on;
+%     line([0 0], ylim)
+%     line(xlim, [0 0])
+%     title('Complexspace of vk post equalization')
+%     set(gca,'fontsize', 15)
+
+if graph == 1
+    
+    figure(J)
     cs = subplot(2,2,[1,2]);
     scatter(real(vk_all),imag(vk_all),'b');
     hold on;
@@ -667,6 +909,9 @@ vk_all = vk_all_rot;
     line(xlim, [0 0])
     title('Complexspace of vk post equalization')
     set(gca,'fontsize', 15)
+    
+end
+
 
 %% --Adder-- %%
 
@@ -700,21 +945,42 @@ msg_hat = xk_hat(1:100);
 
 %% Plot
 
-figure(14)
-subplot(2,2,[3,4])
-%stem(real(vk_all),'b')
-stem(real(vk_all_rot),'b')
-box on;
-grid on;
-hold on;
-%stem(imag(vk_all),'r')
-stem(imag(vk_all_rot)*2-1,'r')
-%stem(real(vk_all_rot),'g')
-%stem(imag(vk_all_rot),'y--')
-stem(bits(1:2:end)*2-1,'g')
-stem(bits(2:2:end)*2-1,'y--')
-legend('vIk','vQk')
-title('All of vk')
+% figure(14)
+% subplot(2,2,[3,4])
+% %stem(real(vk_all),'b')
+% stem(real(vk_all_rot),'b')
+% box on;
+% grid on;
+% hold on;
+% %stem(imag(vk_all),'r')
+% stem(imag(vk_all_rot)*2-1,'r')
+% %stem(real(vk_all_rot),'g')
+% %stem(imag(vk_all_rot),'y--')
+% stem(bits(1:2:end)*2-1,'g')
+% stem(bits(2:2:end)*2-1,'y--')
+% legend('vIk','vQk')
+% title('All of vk')
+
+if graph == 1
+    
+    figure(J)
+    subplot(2,2,[3,4])
+    stem(real(vk_all),'b')
+    box on;
+    grid on;
+    hold on;
+    stem(imag(vk_all),'r')
+    stem(bits(1:2:end)*2-1,'g')
+    stem(bits(2:2:end)*2-1,'y--')
+    legend('v_k^I','v_k^Q')
+    title('All of v_k')
+    set(gca,'fontsize', 15)
+    
+    J = J+2;
+
+end
+
+x_symb = vk_all;
 
 pause();
 
@@ -770,22 +1036,45 @@ disp(' ')
 %Also figure out how to graph the locations of the pilots and messages in
 %the large zk graph
 
-figure(16)
-LargeFigure(gcf, 0.15); % Make figure large
-clf
-subplot(1,3,1)
-imshow(reshape(bits,imdim))
-title('Desired Image')
-set(gca,'fontsize', 15)
-subplot(1,3,2)
-imshow(error_img)
-title('Received Image')
-xlabel(['BER is: ' num2str(BER)])
-set(gca,'fontsize', 15)
+% figure(16)
+% LargeFigure(gcf, 0.15); % Make figure large
+% clf
+% subplot(1,3,1)
+% imshow(reshape(bits,imdim))
+% title('Desired Image')
+% set(gca,'fontsize', 15)
+% subplot(1,3,2)
+% imshow(error_img)
+% title('Received Image')
+% xlabel(['BER is: ' num2str(BER)])
+% set(gca,'fontsize', 15)
+
+if graph == 1
+
+    figure(J)
+    LargeFigure(gcf, 0.15); % Make figure large
+    clf
+    subplot(1,2,1)
+    imshow(reshape(bits,imdim))
+    title('Desired Image')
+    set(gca,'fontsize', 15)
+%     subplot(1,2,2)
+%     imshow(reshape(msg_hat_img,imdim))
+%     title('Received Image')
+%     xlabel(['BER is: ' num2str(BER)])
+%     set(gca,'fontsize', 15)
+    subplot(1,2,2)
+    imshow(error_img)
+    title('Recieved Image')
+    xlabel(['BER is: ' num2str(BER)])
+    set(gca,'fontsize', 15)
+    pause(0.25);
+    J = J+1;
+
+end
 
 pause();
 
-close all
 
 %% --Define Constellation-- %%
 qam_range = 1:sqrt(qam);
@@ -794,27 +1083,24 @@ constellation = [];
  
 for xi = qam_range
     for xq = qam_range
-        constellation = [constellation, xi + 1i*xq];
+        constellation = [constellation, xi + j*xq];
     end
 end
 
-%% --Making some Plots-- %%
+% --Making some Plots-- %%
 if graph == 1
+    
     constellationmarkersize = 6;
-    ax = [];
-    cats = 0;
-    lono = 1:length(zk_sign);
-
-    %close all
-    figure(1) %Constellation Plot Mayne
+    
+    figure(J) %Constellation Plot Mayne
     LargeFigure(gcf, 0.15); % Make figure large
     clf
-    zoom off
+    zoom off;
     plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
     set(gca,'DataAspectRatio',[1 1 1])
-    grid on
-    hold on
-    D = max(D, max(abs(v_k))+1);
+    grid on;
+    hold on;
+    D = max(D, max(abs(x_symb))+1);
     axis([-D D -D D])
     plot([-D:D/100:D],zeros(size([-D:D/100:D])),'k','LineWidth',2)
     plot(zeros(size([-D:D/100:D])),[-D:D/100:D],'k','LineWidth',2)
@@ -823,197 +1109,15 @@ if graph == 1
     ylabel('$x^{Q}$, $z^{Q}$')
 
     title('Constellation Plot')
-    plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
-    for ii=1:L/2
-        plot(v_k(ii),'bx')
+    %plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
+    for ii=1:length(x_symb)
+        plot(x_symb(ii),'bx')
         plot(constellation,'rs','MarkerSize',constellationmarkersize,'MarkerFaceColor','r')
         if (rem(ii,100)==0)
             pause(.00002)
         end
     end
 
-
-    % Display signals in time and frequency domain
-    figure(2)
-    LargeFigure(gcf, 0.15); % Make figure large
-    clf
-    subplot(3,2,1);
-    plot([1:lenp]/fs,p)
-    ylabel('$p^{transmit}(t)$')
-    title('Pulse Signal p(t)')
-    set(gca,'fontsize', 15)
-    subplot(3,2,3);
-    plot(real(x_transmitted),'b')
-    hold on
-    plot(imag(x_transmitted),'r')
-    %plot(imag(pilot_plot),'y')
-    %plot(real(pilot_plot),'g')
-    legend('real','imag')
-    ylabel('$x^{I}(t)$, $x^{Q}(t)$')
-    xlabel('Time in samples')
-    title('Transmit Signal')
-    set(gca,'fontsize', 15)
-    subplot(3,2,2);
-    plot([-lenp/2+1:lenp/2]/lenp*fs,20*log10(abs(fftshift(1/sqrt(lenp)*fft(p)))))
-    ylabel('$|P^{transmit}(f)|$')
-    title('Pulse Signal in Frequency Domain')
-    %axis([-4*fc 4*fc -40 40])
-    set(gca,'fontsize', 15)
-    subplot(3,2,4);
-    plot([0:length(transmitsignal)-1]/length(transmitsignal)-0.5, abs(fftshift(fft(transmitsignal))))
-    ylabel('$|X^{base}(f)|$')
-    xlabel('Frequency in 1/samples')
-    title('Transimt Signal in Frequency Domain')
-    set(gca,'fontsize', 15)
-    subplot(3,2,5)
-    plot(real(y_received),'b')
-    hold on
-    plot(imag(y_received),'r')
-    zoom xon
-    legend('real','imag')
-    ylabel('$y^{I}(t)$,  $y^{Q}(t)$')
-    xlabel('Time in samples')
-    title('Received Signal')
-    set(gca,'fontsize', 15)
-    subplot(3,2,6)
-    plot([0:length(receivedsignal)-1]/length(receivedsignal)-0.5, abs(fftshift(fft(receivedsignal))))
-    ylabel('$|Y^{base}(f)|$')
-    xlabel('Frequency in 1/samples')
-    title('Received Signal in Frequency Domain')
-    set(gca,'fontsize', 15)
-    
-    figure(3) %Timing recovery
-    LargeFigure(gcf, 0.15); % Make figure large
-    clf
-    subplot(2,2,1);
-    plot(corr_time)
-    ylabel('$y^{base}(t)$')
-    title('Time Correlation')
-    set(gca,'fontsize', 15)
-    subplot(2,2,2);
-    plot(abs(corr_time))
-    ylabel('$y^{base}(t)$')
-    title('Absolute Value of the Time Correlation')
-    set(gca,'fontsize', 15)
-    subplot(2,2,3);
-    %plot(y_received_timing)
-    scatter(real(y_received_timing),imag(y_received_timing))
-    ylabel('$y^Q(t)$')
-    xlabel('$y^I(t)$')
-    title('$y(t)$ Time Recovered')
-    set(gca,'fontsize', 15)
-    subplot(2,2,4);
-    plot(real(y_received_timing),'b')
-    hold on;
-    plot(imag(y_received_timing),'r')
-    zoom xon
-    legend('real','imag')
-    ylabel('Received Signal')
-    xlabel('Time in samples')
-    title('$y(t)$ Time Recovered Signal')
-    set(gca,'fontsize', 15)
-    
-    figure(4) %Frame recovery
-    LargeFigure(gcf, 0.15); % Make figure large
-    clf
-    subplot(3,2,1);
-    plot(corr_frame)
-    ylabel('$z_k$')
-    title('Frame Correlation Start')
-    set(gca,'fontsize', 15)
-    subplot(3,2,2);
-    plot(abs(corr_frame))
-    ylabel('$z_k$')
-    title('Absolute Value of the Frame Correlation Start')
-    set(gca,'fontsize', 15)
-    subplot(3,2,3);
-    plot(corr_frame_end)
-    ylabel('$z_k$')
-    title('Frame Correlation End')
-    set(gca,'fontsize', 15)
-    subplot(3,2,4);
-    plot(abs(corr_frame_end))
-    ylabel('$z_k$')
-    title('Absolute Value of the Frame Correlation End')
-    set(gca,'fontsize', 15)
-    subplot(3,2,5);
-    stem(zk_bits)
-    ylabel('$z_k$')
-    title('Recovered $z_k$ Bits')
-    set(gca,'fontsize', 15)
-    subplot(3,2,6);
-    stem(zk_msg)
-    ylabel('$z_k$')
-    title('Frame Correlation End - Found message')
-    set(gca,'fontsize', 15)
-    
-    figure(5) % Bit Stems Plots
-    LargeFigure(gcf, 0.15); % Make figure large
-    clf
-    ax(1) = subplot(2,2,1);
-    %stem([1:x],bitI_hat,'b')
-    %hold on
-    stem(1:length(pilot),pilot,'b')
-    %for zee = 1:length(zIk_frame)
-    %    cat = find(zIk==zIk_frame(zee));
-    %    stem(lono(cat),zI_bits(cat),'b')
-    %end
-    ylabel('Bits') %'$x^I_k,   z^I_{k}$'
-    xlabel('discrete time')
-    title('Pilot Signal')
-    ylim([-2 2]);
-    set(gca,'fontsize', 15)
-    ax(2) = subplot(2,2,2);
-    %stem([1:x],bitI_hat,'b')
-    %hold on
-    stem(lono,zk_sign,'r')
-    %for zee = 1:length(zIk_frame)
-    %    cat = find(zIk==zIk_frame(zee));
-    %    stem(lono(cat),zI_bits(cat),'b')
-    %end
-    ylabel('$z_{k}$') %'$x^I_k,   z^I_{k}$'
-    xlabel('discrete time  $k$  (sampled at $t=kT$)')
-    title('Sampler Output $z_{k}$')
-    ylim([-2 2]);
-    set(gca,'fontsize', 15)
-    %ax(2) = subplot(2,2,2);
-    %stem([1:x],bitQ_hat,'b')
-    %hold on
-    %stem(lono,zQ_bits,'b')
-    %for zee = 1:length(zQk_frame)
-    %    cat = find(zQk==zQk_frame(zee));
-    %    stem(lono(cat),zQ_bits(cat),'r')
-    %end
-    %ylabel('$z^Q_{k}$') %'$x^Q_k,   z^Q_{k}$'
-    %xlabel('discrete time  $k$  (sampled at $t=kT$)')
-    %title('Sampler Output $z^Q_{k}$')
-    %ylim([-2 2]);
-    %set(gca,'fontsize', 15)
-    subplot(2,2,3);
-    stem(1:length(xk_hat),xk_hat,'b')
-    hold on
-    ylabel('$v_{k}$') 
-    xlabel('discrete time  $k$  (sampled at $t=kT$)')
-    title('Equalizer $v_{k}$ output samples')
-    set(gca,'fontsize', 15)
-    ylim([-2 2]);
-    %subplot(2,2,4);
-    %stem([1:x],bitQ_hat,'b')
-    %hold on
-    %stem([1:L],bits_hat','k')
-    %ylabel('$z_{k}$') %'$x^Q_k,   z^Q_{k}$'
-    %xlabel('discrete time  $k$  (sampled at $t=kT$)')
-    %title('Decoded Bits $z_{k}$')
-    %ylim([-2 2]);
-    %set(gca,'fontsize', 15)
-    %linkaxes(ax,'x')
-    %zoom xon
-
-    %figure(6)
-    %scatter(vIk, vQk);
-    %grid on;
-    
-    
 end
 
 %% ---Helper Functions--- %%

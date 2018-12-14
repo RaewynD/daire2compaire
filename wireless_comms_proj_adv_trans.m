@@ -150,7 +150,7 @@ pilot_plot = upsample(pilot_plot,spreading_gain);
 x_up = upsample(x_spread, fs/F_sym);
 x = conv(x_up, p);
 
-% TODO - remove
+% TODO - remove (???)
 pilot_plot = [freq_spread;timing_spread;pilot_spread;msg_spread;pilot_2];
 pilot_plot = upsample(pilot_plot, fs/F_sym);
 pilot_plot = conv(pilot_plot,p);

@@ -4,8 +4,8 @@
 *.mat
 *.m~
 *.mat
-global_vars.mat
-receivedsignal.mat
-transmitsignal.mat
-transmitsignal_RECT.mat
-transmitsignal_SRRC.mat
+#global_vars.mat
+#receivedsignal.mat
+#transmitsignal.mat
+#transmitsignal_RECT.mat
+#transmitsignal_SRRC.mat
